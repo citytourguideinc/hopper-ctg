@@ -1,0 +1,2172 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>City Tour Guide — Digital Waiver</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+    :root {
+      --blue:#0369a1; --blue-light:#e0f2fe; --dark:#0f172a;
+      --gray50:#f8fafc; --gray100:#f1f5f9; --gray200:#e2e8f0;
+      --gray400:#94a3b8; --gray600:#475569; --gray700:#334155; --gray900:#0f172a;
+      --green:#16a34a; --red:#dc2626; --radius:12px;
+    }
+    html,body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-size:16px; }
+    body { background:var(--gray50); color:var(--gray900); min-height:100vh; padding-bottom:160px; }
+
+    /* ── HEADER ── */
+    header { background:#000; color:#fff; text-align:center; padding:0; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.4); }
+    .header-logo-wrap { display:flex; align-items:center; justify-content:center; padding:8px 16px 4px; gap:12px; }
+    .header-logo-text { display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; }
+    .logo-hopper { font-family:'Inter',sans-serif; font-weight:900; font-size:1.25rem; color:#FFFFFF; letter-spacing:0.04em; }
+    .logo-sub { font-family:'Inter',sans-serif; font-weight:500; font-size:0.62rem; color:rgba(255,255,255,0.65); letter-spacing:0.08em; text-transform:uppercase; margin-top:1px; }
+    .header-contact { font-size:.72rem; opacity:.8; padding:0 0 6px; letter-spacing:.03em; }
+    #progress-wrap { height:3px; background:rgba(255,255,255,.15); }
+    #progress-bar  { height:100%; background:#7dd3fc; transition:width .35s ease; }
+
+    /* ── STEPS ── */
+    .step { display:none; padding:20px 16px 120px; max-width:520px; margin:0 auto; }
+    .step.active { display:block; animation:fadeIn .25s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    h1 { font-size:1.35rem; font-weight:800; margin-bottom:8px; }
+    .lead { color:var(--gray600); font-size:.9rem; margin-bottom:18px; line-height:1.5; }
+
+    /* ── SOURCE CHIPS (compact for no-scroll) ── */
+    .source-section h2 { font-size:.88rem; font-weight:700; margin-bottom:8px; color:var(--gray700); }
+    .source-required { font-size:.75rem; color:var(--red); margin-left:4px; }
+    .source-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:6px; }
+    .source-chip {
+      display:flex; align-items:center; gap:6px; padding:8px 10px;
+      border:2px solid var(--gray200); border-radius:9px; background:white;
+      cursor:pointer; font-size:.78rem; font-weight:500; transition:all .15s; text-align:left;
+      font-family:inherit; width:100%;
+    }
+    .source-chip:hover { border-color:var(--blue); background:var(--blue-light); }
+    .source-chip.selected { border-color:var(--blue); background:var(--blue-light); color:var(--blue); font-weight:700; }
+    .source-chip.selected-return { border-color:var(--green); background:#f0fdf4; color:var(--green); font-weight:700; }
+    .source-chip.full-width { grid-column:1/-1; }
+    .chip-icon { font-size:1rem; flex-shrink:0; }
+    .rec-input { flex:1; border:none; background:transparent; font-size:.78rem; font-family:inherit; color:var(--gray900); outline:none; min-width:0; }
+    .rec-input::placeholder { color:var(--gray400); }
+    #src-error { color:var(--red); font-size:.78rem; font-weight:500; display:none; margin-bottom:4px; }
+
+    /* ── RETURNING GUEST (compact inline) ── */
+    .divider { text-align:center; color:var(--gray400); font-size:.73rem; margin:10px 0 8px; display:flex; align-items:center; gap:8px; }
+    .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--gray200); }
+    .returning-row { display:flex; gap:8px; align-items:center; }
+    .lookup-input { flex:1; padding:9px 12px; border:1.5px solid var(--gray200); border-radius:8px; font-size:.85rem; font-family:inherit; transition:background .2s,border-color .2s; }
+    .lookup-input:focus { outline:none; border-color:var(--blue); }
+    .lookup-input:disabled { background:var(--gray100); color:var(--gray400); cursor:not-allowed; border-color:var(--gray200); }
+    .btn-lookup { padding:9px 14px; background:var(--blue); color:white; border:none; border-radius:8px; font-size:.8rem; font-weight:700; cursor:pointer; white-space:nowrap; font-family:inherit; transition:background .2s; }
+    .btn-lookup:hover:not(:disabled) { background:#0284c7; }
+    .btn-lookup:disabled { background:var(--gray200); color:var(--gray400); cursor:not-allowed; }
+    #lookup-status { margin-top:6px; font-size:.78rem; font-weight:500; display:none; }
+    #lookup-status.ok  { color:var(--green); display:block; }
+    #lookup-status.err { color:var(--red);   display:block; }
+    .lookup-contact-links { display:flex; gap:10px; margin-top:6px; }
+    .lookup-contact-links a { font-size:.78rem; font-weight:600; padding:5px 10px; border-radius:6px; text-decoration:none; }
+    .link-email { background:#eff6ff; color:#1d4ed8; }
+    .link-sms   { background:#f0fdf4; color:#15803d; }
+
+    /* ── TYPE BUTTONS ── */
+    .type-btn { display:flex; align-items:center; gap:14px; width:100%; padding:16px 18px; margin-bottom:12px; border:2px solid var(--gray200); border-radius:var(--radius); background:white; cursor:pointer; text-align:left; font-family:inherit; transition:all .15s; }
+    .type-btn.selected { border-color:var(--blue); background:var(--blue-light); }
+    .type-btn .icon  { font-size:1.8rem; }
+    .type-btn .label { font-weight:700; font-size:.95rem; }
+    .type-btn .sub   { font-size:.8rem; color:var(--gray600); margin-top:3px; }
+
+    /* ── WAIVER SCROLL BOX ── */
+    .scroll-note { font-size:.8rem; color:var(--blue); margin-bottom:10px; font-weight:500; }
+    .waiver-box { height:calc(100vh - 310px); min-height:220px; max-height:420px; overflow-y:scroll; border:1.5px solid var(--gray200); border-radius:var(--radius); padding:16px; background:white; font-size:.82rem; line-height:1.65; color:var(--gray700); margin-bottom:10px; }
+    .waiver-box h4 { font-size:.88rem; font-weight:800; margin-bottom:8px; text-transform:uppercase; letter-spacing:.04em; }
+    .waiver-box ol { padding-left:18px; }
+    .waiver-box li { margin-bottom:8px; }
+    .scroll-done   { display:none; color:var(--green); font-size:.8rem; font-weight:600; margin-bottom:4px; }
+    .scroll-prompt { color:var(--gray400); font-size:.78rem; margin-bottom:8px; }
+    .agree-check { display:flex; align-items:flex-start; gap:10px; padding:12px; background:white; border:1.5px solid var(--gray200); border-radius:var(--radius); cursor:not-allowed; }
+    .agree-check input { margin-top:2px; flex-shrink:0; }
+    .agree-check label { font-size:.85rem; line-height:1.4; cursor:inherit; }
+    .agree-locked { opacity:.6; }
+
+    /* ── REVIEW & SIGN ── */
+    .review-info-card { background:#f8faff; border:1.5px solid #bfdbfe; border-radius:var(--radius); padding:14px; margin-bottom:14px; }
+    .review-info-card h3 { font-size:.82rem; font-weight:700; color:var(--blue); margin-bottom:10px; text-transform:uppercase; letter-spacing:.04em; }
+    .review-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; }
+    .review-field { display:flex; flex-direction:column; gap:2px; }
+    .review-field.full { grid-column:1/-1; }
+    .rf-label { font-size:.7rem; font-weight:700; color:var(--gray400); text-transform:uppercase; letter-spacing:.04em; }
+    .rf-value { font-size:.92rem; font-weight:600; color:var(--gray900); }
+    .btn-edit-info { margin-top:10px; font-size:.78rem; color:var(--blue); background:none; border:none; padding:0; cursor:pointer; font-family:inherit; font-weight:600; text-decoration:underline; }
+    .review-waiver-label { font-size:.8rem; font-weight:700; color:var(--gray700); margin:14px 0 6px; display:flex; align-items:center; gap:6px; }
+    .confirm-check-row { display:flex; align-items:flex-start; gap:10px; padding:14px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius); margin-top:12px; cursor:pointer; }
+    .confirm-check-row input { width:18px; height:18px; flex-shrink:0; margin-top:1px; cursor:pointer; }
+    .confirm-check-row label { font-size:.84rem; color:#166534; line-height:1.45; font-weight:500; cursor:pointer; }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:.83rem; font-weight:600; color:var(--gray700); margin-bottom:5px; }
+    .req { color:var(--red); }
+    input[type=text],input[type=email],input[type=tel],input[type=date],select { width:100%; padding:11px 14px; border:1.5px solid var(--gray200); border-radius:8px; font-size:.95rem; font-family:inherit; background:white; color:var(--gray900); transition:border-color .15s; }
+    input:focus,select:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(3,105,161,.07); }
+    .row2 { display:flex; gap:12px; }
+    .row2 .form-group { flex:1; min-width:0; }
+    .row3 { display:flex; gap:8px; }
+    .row3 .form-group { flex:1; min-width:0; }
+    .error-msg { color:var(--red); font-size:.82rem; margin-top:6px; display:none; }
+
+    /* ── ID SCAN ── */
+    .id-scan-card { background:var(--blue-light); border:1.5px solid #bae6fd; border-radius:var(--radius); padding:14px; margin-bottom:16px; }
+    .id-scan-card .title { font-weight:700; font-size:.88rem; color:var(--blue); margin-bottom:4px; }
+    .id-scan-card p { font-size:.8rem; color:var(--gray600); margin-bottom:10px; }
+    .id-scan-row { display:flex; gap:10px; align-items:center; }
+    .btn-scan { padding:10px 18px; background:var(--blue); color:white; border:none; border-radius:8px; font-size:.85rem; font-weight:700; cursor:pointer; font-family:inherit; }
+    #id-status { font-size:.82rem; display:none; }
+    #id-status.loading { color:var(--blue); display:block; }
+    #id-status.success { color:var(--green); display:block; }
+    #id-status.error   { color:var(--red); display:block; }
+
+    /* ── MARKETING OPT-IN ── */
+    .opt-in-row { display:flex; align-items:flex-start; gap:10px; padding:13px; background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:var(--radius); margin-top:16px; cursor:pointer; }
+    .opt-in-row input[type=checkbox] { margin-top:2px; flex-shrink:0; width:auto !important; cursor:pointer; }
+    .opt-in-row label { font-size:.82rem; color:#166534; line-height:1.45; cursor:pointer; }
+
+    /* ── MINOR CARDS ── */
+    .minor-count-row { display:flex; gap:8px; margin-bottom:16px; }
+    .count-btn { flex:1; padding:10px; border:1.5px solid var(--gray200); border-radius:8px; background:white; font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; }
+    .count-btn.active { border-color:var(--blue); background:var(--blue-light); color:var(--blue); }
+    .minor-card { background:white; border:1.5px solid var(--gray200); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
+    .minor-card h4 { font-size:.88rem; font-weight:700; margin-bottom:10px; color:var(--blue); }
+
+    /* ── SIGNATURE CANVAS (used inside modal) ── */
+    .sig-wrap { border:2px dashed var(--gray200); border-radius:var(--radius); background:white; position:relative; height:180px; margin-bottom:12px; overflow:hidden; touch-action:none; }
+    .sig-wrap.has-sig { border-color:var(--blue); }
+    #sig-canvas { display:block; width:100%; height:100%; }
+    .sig-hint { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--gray400); font-size:.9rem; pointer-events:none; }
+    .sig-actions { display:flex; justify-content:flex-end; margin-bottom:10px; }
+    .btn-clear { padding:6px 14px; background:var(--gray100); border:1px solid var(--gray200); border-radius:6px; font-size:.8rem; cursor:pointer; font-family:inherit; }
+    .sig-date { font-size:.82rem; color:var(--gray600); margin-bottom:10px; }
+    .info-note { background:var(--gray100); border-radius:8px; padding:12px; font-size:.8rem; color:var(--gray700); line-height:1.5; }
+    .geo-status { font-size:.75rem; color:var(--gray400); margin-top:6px; }
+
+    /* ── SIGNATURE MODAL ── */
+    #sig-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1200; align-items:flex-end; justify-content:center; }
+    #sig-modal.show { display:flex; }
+    .sig-modal-box { background:white; border-radius:18px 18px 0 0; padding:22px 18px 30px; width:100%; max-width:520px; }
+    .sig-modal-title { font-size:1rem; font-weight:800; color:#0f172a; margin-bottom:4px; }
+    .sig-modal-sub { font-size:.8rem; color:#64748b; margin-bottom:14px; }
+    .sig-modal-actions { display:flex; gap:10px; margin-top:12px; }
+    .btn-sig-confirm { flex:2; padding:13px; background:var(--blue); color:white; border:none; border-radius:10px; font-size:.95rem; font-weight:700; cursor:pointer; font-family:inherit; }
+    .btn-sig-cancel  { flex:1; padding:13px; background:var(--gray100); color:var(--gray700); border:1px solid var(--gray200); border-radius:10px; font-size:.9rem; cursor:pointer; font-family:inherit; }
+
+    /* ── DOCUMENT PREVIEW ── */
+    .doc-preview { background:white; border:1px solid #d1d5db; border-radius:10px; padding:22px 18px 18px; font-family:'Times New Roman',Times,serif; font-size:9pt; line-height:1.5; color:#111; max-height:65vh; overflow-y:auto; margin-bottom:14px; }
+    .doc-preview h4 { font-size:10.5pt; font-weight:700; text-align:center; margin-bottom:10px; font-family:'Times New Roman',Times,serif; }
+    .doc-preview p  { margin-bottom:8px; text-align:justify; }
+    .doc-preview ol { padding-left:20px; margin-bottom:8px; }
+    .doc-preview ol li { margin-bottom:6px; text-align:justify; }
+    .doc-preview .doc-bold { font-weight:700; }
+    .doc-preview .doc-section-title { font-weight:700; text-align:center; margin:12px 0 6px; text-transform:uppercase; font-size:9pt; }
+    /* field rows */
+    .doc-fields { margin-top:14px; }
+    .doc-field-row { display:flex; gap:0; margin-bottom:0; align-items:flex-end; flex-wrap:nowrap; }
+    .doc-field { display:flex; flex-direction:column; flex:1; min-width:0; padding-right:10px; }
+    .doc-field:last-child { padding-right:0; }
+    .df-label { font-size:7.5pt; font-weight:700; font-family:Arial,sans-serif; color:#111; white-space:nowrap; }
+    .df-value { font-size:9pt; font-family:Arial,sans-serif; color:#111; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:16px; border-bottom:1px solid #111; padding-bottom:1px; margin-bottom:4px; }
+    /* signature zone */
+    .doc-sig-zone { display:flex; gap:10px; margin-top:6px; align-items:flex-end; }
+    .doc-sig-field { display:flex; flex-direction:column; flex:2; }
+    .doc-date-field { display:flex; flex-direction:column; flex:1; }
+    .sig-click-area { border-bottom:1px solid #111; min-height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:#fffdf0; border-radius:4px 4px 0 0; transition:background .2s; position:relative; overflow:hidden; }
+    .sig-click-area:hover { background:#fef9c3; }
+    .sig-click-area .sig-click-label { font-size:.8rem; color:#b45309; font-weight:700; display:flex; align-items:center; gap:5px; pointer-events:none; }
+    .sig-click-area img { max-height:44px; width:auto; position:absolute; top:0; left:0; right:0; margin:auto; object-fit:contain; }
+    .doc-preview-scroll-hint { text-align:center; font-size:.76rem; color:#0369a1; font-weight:600; margin-bottom:6px; }
+    .doc-minor-section { margin-top:14px; border-top:1.5px solid #111; padding-top:12px; }
+
+    /* ── BOTTOM NAV ── */
+    #bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid var(--gray200); padding:12px 16px; display:flex; gap:10px; z-index:50; box-shadow:0 -2px 8px rgba(0,0,0,.06); }
+    #btn-back { flex:1; padding:13px; background:var(--gray100); border:none; border-radius:var(--radius); font-size:.95rem; font-weight:600; color:var(--gray700); cursor:pointer; font-family:inherit; }
+    #btn-next { flex:2; padding:13px; background:var(--blue); color:white; border:none; border-radius:var(--radius); font-size:.95rem; font-weight:700; cursor:pointer; font-family:inherit; }
+    #btn-next:disabled { opacity:.5; cursor:not-allowed; }
+    #btn-next:not(:disabled):hover { background:var(--dark); }
+
+    /* ── SUCCESS ── */
+    .success-icon { font-size:3.5rem; text-align:center; margin:16px 0 8px; }
+    .success-card { background:white; border-radius:var(--radius); padding:22px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.1); margin-bottom:14px; }
+    .ref-badge { background:var(--gray100); border-radius:8px; padding:10px 16px; font-family:monospace; font-size:.88rem; color:var(--gray700); margin:10px auto; display:inline-block; }
+    .digital-stamp { margin-top:12px; padding:10px 14px; background:#f8fafc; border:1px solid var(--gray200); border-radius:8px; font-family:monospace; font-size:.7rem; color:#94a3b8; line-height:2; text-align:left; border-left:3px solid #cbd5e1; }
+    .stamp-row { display:flex; gap:6px; }
+    .stamp-label { font-weight:700; color:#64748b; min-width:80px; }
+    .btn-download { display:block; width:100%; padding:13px; margin-top:10px; background:#0f172a; color:white; border:none; border-radius:var(--radius); font-size:.92rem; font-weight:700; cursor:pointer; font-family:inherit; text-decoration:none; text-align:center; }
+    .btn-download:hover { background:#1e293b; }
+    .btn-outline-reset { display:block; width:100%; padding:13px; margin-top:8px; background:white; border:1.5px solid var(--gray200); border-radius:var(--radius); font-size:.92rem; font-weight:600; color:var(--gray700); cursor:pointer; font-family:inherit; }
+
+    /* ── LOADING ── */
+    #loading-overlay { display:none; position:fixed; inset:0; background:rgba(255,255,255,.85); z-index:999; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+    #loading-overlay.show { display:flex; }
+    .spinner { width:44px; height:44px; border:4px solid var(--gray200); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
+    /* ── PHOTO OPT-IN MODAL ── */
+    #photo-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+    #photo-modal.show { display:flex; }
+    .photo-modal-box { background:white; border-radius:16px; padding:28px 22px; max-width:360px; width:100%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+    .photo-modal-box .pm-icon { font-size:3rem; margin-bottom:10px; }
+    .photo-modal-box h2 { font-size:1.1rem; font-weight:800; margin-bottom:8px; color:#0f172a; }
+    .photo-modal-box p { font-size:.87rem; color:#475569; line-height:1.55; margin-bottom:20px; }
+    .pm-btn-yes { width:100%; padding:13px; background:var(--green); color:white; border:none; border-radius:10px; font-size:.95rem; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:8px; }
+    .pm-btn-no  { width:100%; padding:11px; background:var(--gray100); color:var(--gray700); border:1px solid var(--gray200); border-radius:10px; font-size:.88rem; font-weight:600; cursor:pointer; font-family:inherit; }
+  </style>
+<script>
+window.__hopperToken = '__HOPPER_TOKEN__';
+// Immediately clear sticky form if this is a different guest's waiver
+(function() {
+  try {
+    var prev = sessionStorage.getItem('waiverSessionToken');
+    if (prev && prev !== window.__hopperToken) {
+      localStorage.removeItem('waiverSticky');
+    }
+    sessionStorage.setItem('waiverSessionToken', window.__hopperToken);
+  } catch(e) {}
+})();
+</script>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p id="loading-msg">Processing...</p>
+</div>
+
+<!-- Photo opt-in "Are you sure?" modal -->
+<div id="photo-modal">
+  <div class="photo-modal-box">
+    <div class="pm-icon">📸</div>
+    <h2>Don't miss your tour photos!</h2>
+    <p>By opting out, you won't receive your tour photos or any updates from City Tour Guide. Are you sure you want to skip?</p>
+    <button class="pm-btn-yes" onclick="optInAndSubmit()">📸 Yes — send me my photos!</button>
+    <button class="pm-btn-no" onclick="skipOptInAndSubmit()">No thanks, skip photos</button>
+  </div>
+</div>
+
+<header>
+  <div class="header-logo-wrap">
+    <div class="header-logo-text"><span class="logo-hopper">City Hopper</span><span class="logo-sub">by City Tour Guide</span></div>
+  </div>
+  <p class="header-contact">📞 833.813.8687 &nbsp;|&nbsp; info@citytourguideinc.com</p>
+  <div id="progress-wrap"><div id="progress-bar" style="width:0%"></div></div>
+</header>
+
+
+
+<!-- ══ STEP 1 — SELECT TYPE ══ -->
+
+<!-- PRE-STEP 0: Multi-guest setup -->
+<section class="step" id="step-0" style="display:none">
+  <h1 style="font-size:1.3rem">👥 Group Waiver Setup</h1>
+  <p class="lead" style="margin-bottom:20px">You booked for <strong id="pre-guest-count">2</strong> guests. Let's set everyone up.</p>
+
+  <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:16px;padding:20px;margin-bottom:16px">
+    <label style="font-weight:700;color:#0B1D3A;display:block;margin-bottom:12px">🧒 Minors in your group (under 18)?</label>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span style="color:#475569;font-size:0.9rem">Number of minors:</span>
+      <select id="minor-count-select" onchange="updateAdultSection()" style="padding:10px 16px;border:2px solid #CBD5E1;border-radius:10px;font-size:1rem;font-weight:700;color:#0B1D3A;background:#fff">
+        <option value="0">0 — No minors</option>
+      </select>
+    </div>
+    <p id="minor-note" style="font-size:0.8rem;color:#059669;margin:10px 0 0;display:none">✅ You'll sign their section — minors don't sign separately.</p>
+  </div>
+
+  <div id="adult-links-section" style="background:#F0F9FF;border:1.5px solid #38BDF8;border-radius:16px;padding:20px;margin-bottom:16px;display:none">
+    <p style="font-weight:700;color:#0B1D3A;margin:0 0 10px">📝 <span id="adult-count-label">Other adults</span> each need their own waiver</p>
+    <label style="font-weight:600;color:#0B1D3A;display:block;margin-bottom:8px;font-size:0.9rem">How will they sign?</label>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <label style="display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:2px solid #CBD5E1;border-radius:12px;cursor:pointer">
+        <input type="radio" name="signing-method" value="handoff" id="method-handoff" checked onchange="updateSmsSection()" style="width:20px;height:20px;accent-color:#0B1D3A">
+        <div><strong style="color:#0B1D3A">🤝 Sign on this phone</strong><br><span style="font-size:0.78rem;color:#64748B">Hand your phone to each person after you sign</span></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:2px solid #CBD5E1;border-radius:12px;cursor:pointer">
+        <input type="radio" name="signing-method" value="sms" id="method-sms" onchange="updateSmsSection()" style="width:20px;height:20px;accent-color:#0B1D3A">
+        <div><strong style="color:#0B1D3A">💬 Send a text link</strong><br><span style="font-size:0.78rem;color:#64748B">Each person signs on their own phone</span></div>
+      </label>
+    </div>
+    <div id="sms-phones-section" style="display:none;margin-top:14px">
+      <p style="font-size:0.82rem;color:#475569;margin:0 0 10px">Phone numbers for each additional adult:</p>
+      <div id="sms-phone-fields"></div>
+    </div>
+  </div>
+
+  <button onclick="confirmPreStep()" style="width:100%;padding:16px;background:linear-gradient(135deg,#0B1D3A,#1E3A5F);color:#fff;border:none;border-radius:16px;font-size:1rem;font-weight:700;cursor:pointer">Start My Waiver →</button>
+</section>
+<section class="step" id="step-1">
+  <h1>Waiver Type</h1>
+  <p class="lead">Select the option that applies to you:</p>
+
+  <button class="type-btn" id="type-adult" onclick="selectType('adult_only')">
+    <span class="icon">👤</span>
+    <div>
+      <div class="label">Adult Only (18+)</div>
+      <div class="sub">I am participating without any minor children</div>
+    </div>
+  </button>
+
+  <button class="type-btn" id="type-minors" onclick="selectType('adult_with_minors')">
+    <span class="icon">👨‍👧</span>
+    <div>
+      <div class="label">Adult + Minor Children</div>
+      <div class="sub">I have children under 18 participating with me</div>
+    </div>
+  </button>
+
+  <p style="font-size:.78rem;color:var(--gray400);text-align:center;margin-top:16px;">Each adult must complete their own waiver independently.</p>
+</section>
+
+<!-- ══ STEP 2 — ADULT WAIVER ══ -->
+<section class="step" id="step-2">
+  <h1 style="font-size:1rem;text-transform:uppercase;letter-spacing:.04em;line-height:1.4;">Participant Agreement, Release and Assumption of Risk</h1>
+  <p class="scroll-note">📜 Please scroll through and read the full agreement</p>
+
+  <div class="waiver-box" id="adult-waiver-box" onscroll="checkScroll('adult-waiver-box','adult-scroll-done')">
+    <h4>Participant Agreement, Release and Assumption of Risk</h4>
+    <p>In consideration of the services of City tour guide inc, their agents, owners, officers, volunteers, personnel, and all other persons or entities acting in any capacity on their behalf (hereinafter collectively referred to as "CTG"), I hereby agree to release, indemnify, and discharge CTG, on behalf of myself, my spouse, my children, my parents, my heirs, assigns, personal representative and estate as follows:</p>
+    <ol>
+      <li>I acknowledge that my participation in golf cart activities entails known and unanticipated risks that could result in physical or emotional injury, paralysis, death, or damage to myself, to property, or to third parties. I understand that such risks simply cannot be eliminated without jeopardizing the essential qualities of the activity.<br><br>
+      <strong>The risks include, among other things:</strong> slip &amp; falls; collision with fixed objects or people; exposure to the elements could cause sunburn, dehydration, heat exhaustion, heat stroke, and heat cramps; equipment failure or operator error; accidents involving other vehicles; falls from the cart; the negligence of other operators of vehicles or myself; transmissible pathogen or disease; weather conditions; my own physical condition; contact with animals or insects; all of which could result in musculoskeletal or other injuries including head, neck, and back injuries.</li>
+      <li>I expressly agree and promise to accept and assume all of the risks existing in this activity. My participation in this activity is purely voluntary, and I elect to participate in spite of the risks. Additionally, I agree to wear my seat belt while participating in this activity.</li>
+      <li>I hereby voluntarily release, forever discharge, and agree to indemnify and hold harmless CTG from any and all claims, demands, or causes of action, which are in any way connected with my participation in this activity or my use of CTG's equipment or facilities, <strong>including any such claims which allege negligent acts or omissions of CTG.</strong></li>
+      <li>Should CTG or anyone acting on their behalf, be required to incur attorney's fees and costs to enforce this agreement, I agree to indemnify and hold them harmless for all such fees and costs.</li>
+      <li>I certify that I have adequate insurance to cover any injury or damage I may cause or suffer while participating, or else I agree to bear the costs of such injury or damage myself. I further certify that I am willing to assume the risk of any medical or physical condition I may have.</li>
+      <li>In the event that I file a lawsuit against CTG, I agree to do so solely in the state of Florida, and I further agree that the substantive law of that state shall apply in that action without regard to the conflict of law rules of that state. I agree that if any portion of this agreement is found to be void or unenforceable, the remaining document shall remain in full force and effect.</li>
+    </ol>
+    <br>
+    <p><strong>By signing this document, I acknowledge that if anyone is hurt or property is damaged during my participation in this activity, I may be found by a court of law to have waived my right to maintain a lawsuit against CTG on the basis of any claim from which I have released them herein. I also agree that this document is valid for subsequent visits and participation at CTG. I have had sufficient opportunity to read this entire document. I have read and understood it, and I agree to be bound by its terms.</strong></p>
+  </div>
+  <p class="scroll-done" id="adult-scroll-done">✓ You've read the full agreement — you may now agree below</p>
+  <p class="scroll-prompt" id="adult-scroll-prompt">↕ Scroll to the bottom to enable the agreement checkbox</p>
+
+  <label class="agree-check agree-locked" id="agree-adult-wrap" for="agree-adult">
+    <input type="checkbox" id="agree-adult" disabled>
+    <label for="agree-adult">I have read, understand, and agree to the Participant Agreement, Release and Assumption of Risk above.</label>
+  </label>
+</section>
+
+<!-- ══ STEP 3 — MINOR WAIVER ══ -->
+<section class="step" id="step-3">
+  <h1>Minor Children Waiver</h1>
+  <p class="scroll-note">📜 Scroll through and read the full minor waiver</p>
+
+  <div class="waiver-box" id="minor-waiver-box" onscroll="checkScroll('minor-waiver-box','minor-scroll-done')">
+    <h4>City Tour Guide Inc — Perpetual Waiver and Release<br>(Valid for Each and Every Date of Participation)</h4>
+    <p>We want you to have a great experience with us. However, for your protection and ours, you must read and agree to the provisions below before you are authorized to use our facilities and/or services. The different activities that are offered entail certain risks that simply cannot be eliminated without jeopardizing the essential qualities of the activity. If you are unable or unwilling to sign this Waiver and Release, you are welcome to enjoy yourself by watching others, but we cannot allow you to personally participate in any of our activities or actively use our facilities and/or services.</p>
+    <br>
+    <h4>Notice to the Minor Child's Natural Guardian</h4>
+    <p><strong>READ THIS FORM COMPLETELY AND CAREFULLY. YOU ARE AGREEING TO LET YOUR MINOR CHILD ENGAGE IN A POTENTIALLY DANGEROUS ACTIVITY. YOU ARE AGREEING THAT, EVEN IF City tour guide inc USES REASONABLE CARE IN PROVIDING THIS ACTIVITY, THERE IS A CHANCE YOUR CHILD MAY BE SERIOUSLY INJURED OR KILLED BY PARTICIPATING IN THIS ACTIVITY BECAUSE THERE ARE CERTAIN DANGERS INHERENT IN THE ACTIVITY WHICH CANNOT BE AVOIDED OR ELIMINATED. BY SIGNING THIS FORM, YOU ARE GIVING UP YOUR CHILD'S RIGHT AND YOUR RIGHT TO RECOVER FROM City tour guide inc IN A LAWSUIT FOR ANY PERSONAL INJURY, INCLUDING DEATH, TO YOUR CHILD OR ANY PROPERTY DAMAGE THAT RESULTS FROM THE RISKS THAT ARE A NATURAL PART OF THE ACTIVITY. YOU HAVE THE RIGHT TO REFUSE TO SIGN THIS FORM, AND City tour guide inc HAS THE RIGHT TO REFUSE TO LET YOUR CHILD PARTICIPATE IF YOU DO NOT SIGN THIS FORM.</strong></p>
+    <br>
+    <p>I have read this Waiver and Release and agree as follows:</p>
+    <ol>
+      <li>I recognize and agree that: all risks can never be eliminated, and participating in the activities at <strong>City tour guide inc</strong> involves inherent danger and potential risk of both minor and serious, temporary and permanent, bodily injury of any and all kinds, both caused by me and/or by others. In signing this release, I assume all risk for, and financial cost of, any and all injuries, and/or any damage, to my child/children.</li>
+      <li>On behalf of my minor child/children I fully, and forever waive, release and discharge <strong>City tour guide inc</strong> and its individual members, managers, directors, officers, agents, employees, volunteers, representatives, affiliated entities, and all other persons, firms, corporations, associations or partnerships claiming by or through them, from any and all claims, actions, causes of action, demands, judgments, damages (including compensatory, general, special, consequential, and exemplary), liability or obligations of any nature or kind, whether known at the time or which may arise or become known later, which accrue on account of, or in any way arise out of or in connection with me or my child's activities with or at <strong>City tour guide inc</strong> including claims involving their own negligence.</li>
+      <li>I agree to indemnify and hold harmless <strong>City tour guide inc</strong> and its individual managers, directors, officers, agents, employees, volunteers, representatives, affiliated entities, and all other persons, corporations, or partnerships claiming by or through them, from and against any and all losses, liabilities, claims, obligations, costs, damages, and/or judgments directly or indirectly arising out of, or relating to, my child's/children's participation in any activities at <strong>City tour guide inc</strong>, including for claims alleging <strong>City tour guide inc</strong> own negligence.</li>
+      <li>I understand that this agreement extends forever into the future and will have full force and legal effect each and every time my child/children visit <strong>City tour guide inc</strong> whether at the current location or any other location or facility.</li>
+    </ol>
+    <br>
+    <p><strong>I have read the City tour guide inc Waiver and Release from any Claim of Responsibility or Damage and agree to all conditions.</strong></p>
+  </div>
+  <p class="scroll-done" id="minor-scroll-done">✓ You've read the full minor waiver — you may now agree below</p>
+  <p class="scroll-prompt" id="minor-scroll-prompt">↕ Scroll to the bottom to enable the agreement checkbox</p>
+
+  <label class="agree-check agree-locked" id="agree-minor-wrap" for="agree-minor">
+    <input type="checkbox" id="agree-minor" disabled>
+    <label for="agree-minor">As parent or legal guardian, I have read, understand, and agree to the Minor Waiver &amp; Release for all children participating with me.</label>
+  </label>
+</section>
+
+<!-- ══ STEP 4 — PERSONAL INFO ══ -->
+<section class="step" id="step-4">
+  <h1>Your Information</h1>
+  <p class="lead">Please complete all required fields. Your information will be recorded with your signed waiver.</p>
+
+  <!-- Optional ID scan -->
+  <div class="id-scan-card">
+    <div class="title">📷 Auto-fill with your ID (optional)</div>
+    <p>Take a photo or upload an image of your driver's license. Processed instantly and <strong>never stored</strong>.</p>
+    <div class="id-scan-row">
+      <input type="file" id="id-file-camera" accept="image/*" capture="environment" style="display:none" onchange="handleIDUpload(this)">
+      <input type="file" id="id-file-upload" accept="image/*" style="display:none" onchange="handleIDUpload(this)">
+      <button class="btn-scan" onclick="document.getElementById('id-file-camera').click()">📷 Take Photo</button>
+      <button class="btn-scan" style="background:var(--gray100);color:var(--text);border:2px solid var(--gray200)" onclick="document.getElementById('id-file-upload').click()">📁 Upload Photo</button>
+      <span id="id-status"></span>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="f-name">Full Name <span class="req">*</span></label>
+    <input type="text" id="f-name" placeholder="First Last" autocomplete="name">
+  </div>
+
+  <div class="form-group">
+    <label for="f-dob-text">Date of Birth <span class="req">*</span></label>
+    <div style="position:relative;display:flex;gap:8px;align-items:stretch">
+      <input type="text" id="f-dob-text" placeholder="MM / DD / YYYY" inputmode="numeric" maxlength="10" autocomplete="bday" style="flex:1;font-size:1rem" oninput="syncDobFromText(this)">
+      <div style="position:relative;flex-shrink:0">
+        <button type="button" onclick="document.getElementById('f-dob').showPicker()" style="height:100%;padding:0 14px;border:2px solid var(--gray200);border-radius:8px;background:white;cursor:pointer;font-size:1.2rem" title="Open calendar">📅</button>
+        <input type="date" id="f-dob" onchange="syncDobFromPicker(this)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:-1">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="f-address">Street Address</label>
+    <input type="text" id="f-address" placeholder="123 Main St" autocomplete="street-address">
+  </div>
+
+  <div class="row2">
+    <div class="form-group" style="flex:2">
+      <label for="f-city">City</label>
+      <input type="text" id="f-city" placeholder="City" autocomplete="address-level2">
+    </div>
+    <div class="form-group" style="flex:1">
+      <label for="f-state">State</label>
+      <input type="text" id="f-state" placeholder="FL" maxlength="2" autocomplete="address-level1" style="text-transform:uppercase">
+    </div>
+    <div class="form-group" style="flex:1">
+      <label for="f-zip">Zip</label>
+      <input type="text" id="f-zip" placeholder="33601" autocomplete="postal-code">
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="form-group">
+      <label for="f-phone">Phone</label>
+      <input type="tel" id="f-phone" placeholder="(555) 123-4567" autocomplete="tel">
+    </div>
+    <div class="form-group">
+      <label for="f-email">Email</label>
+      <input type="email" id="f-email" placeholder="you@email.com" autocomplete="email">
+    </div>
+  </div>
+
+  <p id="info-error" class="error-msg">⚠ Please enter your full name and date of birth to continue.</p>
+</section>
+
+<!-- ══ STEP 5 — CHILDREN'S INFO ══ -->
+<section class="step" id="step-5">
+  <h1>Children's Information</h1>
+  <p class="lead">How many minor children (under 18) will be participating with you?</p>
+
+  <div class="minor-count-row" id="minor-count-row">
+    <button class="count-btn active" data-n="1" onclick="setMinorCount(1)">1</button>
+    <button class="count-btn"        data-n="2" onclick="setMinorCount(2)">2</button>
+    <button class="count-btn"        data-n="3" onclick="setMinorCount(3)">3</button>
+    <button class="count-btn"        data-n="4" onclick="setMinorCount(4)">4</button>
+  </div>
+
+  <div id="minor-fields"></div>
+  <p id="minor-error" class="error-msg">⚠ Please complete all required fields for each child.</p>
+</section>
+
+<!-- ══ STEP 6 — REVIEW & SIGN ══ -->
+<section class="step" id="step-6">
+  <h1>Review &amp; Sign</h1>
+  <p class="lead">Your completed form is shown below. Scroll through, then click the signature field to place your signature — just like DocuSign.</p>
+
+  <!-- ── Document preview (populated by JS) ── -->
+  <p class="doc-preview-scroll-hint" id="doc-scroll-hint">↕ Scroll through the form to unlock signing</p>
+  <div class="doc-preview" id="doc-preview" onscroll="onDocScroll()"></div>
+
+  <!-- Confirm checkbox (auto-unlocks after scroll) -->
+  <label class="confirm-check-row agree-locked" id="agree-confirm-wrap" for="agree-confirm" style="margin-top:10px">
+    <input type="checkbox" id="agree-confirm" disabled>
+    <label for="agree-confirm">I confirm the information above is accurate. I have read, understood, and voluntarily agree to the terms of this waiver. My drawn signature is my legally binding electronic signature.</label>
+  </label>
+
+  <!-- Marketing opt-in (pre-checked) -->
+  <label class="opt-in-row" for="f-marketing" style="margin-top:12px;cursor:pointer">
+    <input type="checkbox" id="f-marketing" checked style="width:18px;height:18px;flex-shrink:0;margin-top:1px;cursor:pointer">
+    <span style="font-size:.82rem;color:#166534;line-height:1.5">
+      <strong>📸 Keep me updated &amp; send my tour photos!</strong><br>
+      Receive your tour photos, exclusive deals, and Tampa insider tips by text or email.<br>
+      <span style="font-size:.76rem;color:#15803d;opacity:.85">🔒 We never spam, sell, or share your info — unsubscribe anytime in one tap.</span>
+    </span>
+  </label>
+
+  <p id="sig-error" class="error-msg">⚠ Please click the signature field to sign the form.</p>
+</section>
+
+<!-- ══ SIGNATURE MODAL ══ -->
+<div id="sig-modal">
+  <div class="sig-modal-box">
+    <div class="sig-modal-title">✍️ Draw Your Signature</div>
+    <div class="sig-modal-sub">Sign in the box below — use your finger or stylus</div>
+    <div class="sig-wrap" id="sig-wrap">
+      <canvas id="sig-canvas"></canvas>
+      <span class="sig-hint" id="sig-hint">✍ Draw your signature here</span>
+    </div>
+    <div class="sig-actions">
+      <button class="btn-clear" onclick="clearSig()">✕ Clear</button>
+    </div>
+    <div class="sig-modal-actions">
+      <button class="btn-sig-cancel" onclick="closeSignModal()">Cancel</button>
+      <button class="btn-sig-confirm" onclick="applySignature()">Place Signature ✓</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ STEP 7 — SUCCESS ══ -->
+<section class="step" id="step-7">
+  <div class="success-icon">✅</div>
+  <div class="success-card">
+    <h1 style="font-size:1.35rem;margin-bottom:8px;">Waiver Submitted!</h1>
+    <p style="color:var(--gray600);margin-bottom:12px;">Thank you, <strong id="success-name"></strong>. Your waiver is on file with City Tour Guide.</p>
+    <div class="ref-badge">Ref: <span id="success-ref">-</span></div>
+
+    <!-- Digital Stamp -->
+    <div class="digital-stamp" id="digital-stamp">
+      <div class="stamp-row"><span class="stamp-label">Waiver ID</span><span id="stamp-id">-</span></div>
+      <div class="stamp-row"><span class="stamp-label">Signed</span><span id="stamp-time">-</span></div>
+      <div class="stamp-row"><span class="stamp-label">Device</span><span id="stamp-device">-</span></div>
+    </div>
+  </div>
+
+  <!-- Main guest (guest 1) → next step button -->
+  <div id="success-action-main" style="display:none;text-align:center;margin-top:20px;">
+    <p style="font-size:0.85rem;color:#6B7280;margin-bottom:12px;">Taking you to your ride status…</p>
+    <a id="btn-go-to-ride" href="#" style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#0B1D3A,#1E3A5F);color:#fff;border-radius:14px;font-weight:800;font-size:0.95rem;text-decoration:none;font-family:Inter,sans-serif;">
+      View My Ride →
+    </a>
+  </div>
+
+  <!-- Secondary guests → close tab message -->
+  <div id="success-action-guest" style="display:none;text-align:center;margin-top:20px;padding:16px;background:#F0FDF4;border-radius:14px;border:1.5px solid #10B981;">
+    <p style="font-size:1rem;font-weight:700;color:#065F46;margin:0 0 6px;">You're all set! 🎉</p>
+    <p style="font-size:0.84rem;color:#6B7280;margin:0;">You can now close this tab.</p>
+  </div>
+
+  <a id="btn-download-pdf" href="#" target="_blank" class="btn-download" style="margin-top:12px;">⬇️ Download Signed Waiver (PDF)</a>
+</section>
+
+<!-- Bottom nav -->
+<div id="bottom-nav">
+  <button id="btn-back" onclick="prevStep()">← Back</button>
+  <button id="btn-next" onclick="nextStep()">Continue →</button>
+</div>
+
+<script>
+// ══════════════════════
+// STATE
+// ══════════════════════
+let currentStep    = 0;
+let waiverType     = null;
+let sigHasMark     = false;
+let minorCount     = 1;
+let sigCtx         = null;
+let sigDrawing     = false;
+let sigLastX       = 0, sigLastY = 0;
+let selectedSource = null;
+let capturedLat    = null, capturedLon = null;
+let lastWaiverId   = null;
+
+// Step sequences — steps 2 & 3 (old standalone waivers) now folded into step 6 Review & Sign
+// adult_only:        0→1→4→6→7
+// adult_with_minors: 0→1→4→5→6→7
+function getStepSequence() {
+  if (waiverType === 'adult_with_minors') return [1,4,5,6,7];
+  return [1,4,6,7];
+}
+
+// ══════════════════════
+// NAVIGATION
+// ══════════════════════
+function nextStep() {
+  const seq = getStepSequence();
+  const idx = seq.indexOf(currentStep);
+  if (idx === -1) return;
+
+  // Signature step — async submit
+  if (currentStep === 6) { submitWaiver(); return; }
+
+  if (!validateStep(currentStep)) return;
+
+  if (idx + 1 < seq.length) {
+    currentStep = seq[idx + 1];
+    showStep(currentStep);
+  }
+}
+
+function prevStep() {
+  const seq = getStepSequence();
+  const idx = seq.indexOf(currentStep);
+  if (idx <= 0) return;
+  currentStep = seq[idx - 1];
+  showStep(currentStep);
+}
+
+function showStep(id) {
+  document.querySelectorAll('.step').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+
+  const el = document.getElementById('step-' + id);
+  if (el) {
+    el.classList.add('active');
+    el.style.display = 'block';
+    window.scrollTo(0, 0);
+  } else {
+    console.error('[showStep] Missing step:', id);
+  }
+
+  if (id === 4) loadStickyForm();   // pre-fill on info step
+  if (id === 5) renderMinorFields(); // always re-render child fields when arriving at step 5
+  if (id === 6) {
+    populateReviewSummary();
+    // Note: canvas init happens inside openSignModal() after the modal is visible
+    const minorInsert = document.getElementById('minor-waiver-insert');
+    if (minorInsert) minorInsert.style.display = waiverType === 'adult_with_minors' ? 'block' : 'none';
+  }
+
+  updateProgress();
+  updateNav();
+}
+
+// ══════════════════════
+// REVIEW SUMMARY → DocuSign document preview
+// ══════════════════════
+function field(label, value, flexVal) {
+  const v = value || '';
+  const f = flexVal ? ` style="flex:${flexVal}"` : '';
+  return `<div class="doc-field"${f}><div class="df-label">${label}</div><div class="df-value">${v}&nbsp;</div></div>`;
+}
+
+function populateReviewSummary() {
+  const g    = id => (document.getElementById(id)?.value || '').trim();
+  const name = g('f-name');
+  const dob  = g('f-dob-text') || g('f-dob');
+  const phone  = g('f-phone');
+  const email  = g('f-email');
+  const address = g('f-address');
+  const city  = g('f-city');
+  const state = g('f-state');
+  const zip   = g('f-zip');
+  const today = new Date().toLocaleDateString('en-US');
+
+  let stickyBadge = '';
+  if (window._stickyWasUsed) {
+    stickyBadge = `<div style="font-size:.72rem;color:#15803d;font-weight:600;margin-bottom:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:6px 10px">✅ Pre-filled from your last visit on this device</div>`;
+  }
+
+  // Build minor children rows (for adult_with_minors)
+  let minorHTML = '';
+  if (waiverType === 'adult_with_minors') {
+    let childRows = '';
+    for (let i = 1; i <= minorCount; i++) {
+      const fn  = g(`m-fn-${i}`);
+      const ln  = g(`m-ln-${i}`);
+      const bd  = g(`m-dob-${i}`);
+      const rel = document.getElementById(`m-rel-${i}`)?.value || '';
+      const childName = [fn, ln].filter(Boolean).join(' ');
+      childRows += `<div class="doc-field-row" style="margin-bottom:8px">
+        <div class="doc-field" style="flex:2">
+          <div class="df-label">MINOR NAME #${i}</div>
+          <div class="df-value">${childName || '&nbsp;'}</div>
+          <div style="font-size:6.5pt;color:#666;font-family:Arial">First name, Last name</div>
+        </div>
+        <div class="doc-field" style="flex:1.2">
+          <div class="df-label">BIRTHDATE</div>
+          <div class="df-value">${bd || '&nbsp;'}</div>
+          <div style="font-size:6.5pt;color:#666;font-family:Arial">mm/dd/yy</div>
+        </div>
+        <div class="doc-field" style="flex:1">
+          <div class="df-label">RELATION</div>
+          <div class="df-value">${rel || '&nbsp;'}</div>
+        </div>
+      </div>`;
+    }
+    minorHTML = `
+    <div class="doc-minor-section">
+      <div class="doc-section-title">City tour guide inc<br>PERPETUAL WAIVER AND RELEASE<br><span style="font-size:8pt;font-weight:400">(VALID FOR EACH AND EVERY DATE OF PARTICIPATION)</span></div>
+      <p>We want you to have a great experience with us. However, for your protection and ours, you must read and agree to the provisions below before you are authorized to use our facilities and/or services. The different activities that are offered entail certain risks that simply cannot be eliminated without jeopardizing the essential qualities of the activity. If you are unable or unwilling to sign this Waiver and Release, you are welcome to enjoy yourself by watching others, but we cannot allow you to personally participate in any of our activities or actively use our facilities and/or services.</p>
+      <div class="doc-section-title" style="font-size:8.5pt">NOTICE TO THE MINOR CHILD'S NATURAL GUARDIAN</div>
+      <p style="font-weight:700">READ THIS FORM COMPLETELY AND CAREFULLY. YOU ARE AGREEING TO LET YOUR MINOR CHILD ENGAGE IN A POTENTIALLY DANGEROUS ACTIVITY. YOU ARE AGREEING THAT, EVEN IF City tour guide inc USES REASONABLE CARE IN PROVIDING THIS ACTIVITY, THERE IS A CHANCE YOUR CHILD MAY BE SERIOUSLY INJURED OR KILLED BY PARTICIPATING IN THIS ACTIVITY BECAUSE THERE ARE CERTAIN DANGERS INHERENT IN THE ACTIVITY WHICH CANNOT BE AVOIDED OR ELIMINATED. BY SIGNING THIS FORM, YOU ARE GIVING UP YOUR CHILD'S RIGHT AND YOUR RIGHT TO RECOVER FROM City tour guide inc IN A LAWSUIT FOR ANY PERSONAL INJURY, INCLUDING DEATH, TO YOUR CHILD OR ANY PROPERTY DAMAGE THAT RESULTS FROM THE RISKS THAT ARE A NATURAL PART OF THE ACTIVITY. YOU HAVE THE RIGHT TO REFUSE TO SIGN THIS FORM, AND City tour guide inc HAS THE RIGHT TO REFUSE TO LET YOUR CHILD PARTICIPATE IF YOU DO NOT SIGN THIS FORM.</p>
+      <p><u>${name}</u> (PRINT YOUR NAME) has read this Waiver and Release and agrees as follows:</p>
+      <ol>
+        <li>I recognize and agree that: all risks can never be eliminated, and participating in the activities at City tour guide inc involves inherent danger and potential risk of both minor and serious, temporary and permanent, bodily injury of any and all kinds, both caused by me and/or by others. In signing this release, I assume all risk for, and financial cost of, any and all injuries, and/or any damage, to my child/children.</li>
+        <li>On behalf of my minor child/children I fully, and forever waive, release and discharge City tour guide inc and its individual members, managers, directors, officers, agents, employees, volunteers, representatives, affiliated entities, and all other persons, firms, corporations, associations or partnerships claiming by or through them, from any and all claims, actions, causes of action, demands, judgments, damages (including compensatory, general, special, consequential, and exemplary), liability or obligations of any nature or kind, whether known at the time or which may arise or become known later, which accrue on account of, or in any way arise out of or in connection with me or my child's activities with or at City tour guide inc including claims involving their own negligence.</li>
+        <li>I agree to indemnify and hold harmless City tour guide inc and its individual managers, directors, officers, agents, employees, volunteers, representatives, affiliated entities, and all other persons, corporations, or partnerships claiming by or through them, from and against any and all losses, liabilities, claims, obligations, costs, damages, and/or judgments directly or indirectly arising out of, or relating to, my child's/children's participation in any activities at City tour guide inc, including for claims alleging City tour guide inc own negligence.</li>
+        <li>I understand that this agreement extends forever into the future and will have full force and legal effect each and every time my child/children visit City tour guide inc whether at the current location or any other location or facility.</li>
+      </ol>
+      <p style="font-weight:700">I have read the City tour guide inc <em>Waiver and Release from any Claim of Responsibility or Damage</em> and agree to all conditions.</p>
+      <div class="doc-fields">
+        <div class="doc-field-row">
+          ${field('Parent Name/Legal Guardian (Print):', name, 3)}
+        </div>
+        <div class="doc-field-row" style="margin-top:8px">
+          ${field('Address', address, 3)}
+        </div>
+        <div class="doc-field-row" style="margin-top:8px">
+          ${field('City', city, 2)}
+          ${field('State', state, 1)}
+          ${field('Zip', zip, 1)}
+        </div>
+        <div class="doc-field-row" style="margin-top:8px">
+          ${field('Phone Number:', phone, 2)}
+          ${field('Date of Birth', dob, 1.5)}
+        </div>
+        <div class="doc-fields" style="margin-top:12px">
+          <div style="font-size:8.5pt;font-weight:700;margin-bottom:6px">NAMES AND BIRTHDATES OF ALL CHILDREN UNDER 18 to be included with your signature</div>
+          ${childRows}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('doc-preview').innerHTML = `
+    ${stickyBadge}
+    <h4>PARTICIPANT AGREEMENT, RELEASE AND ASSUMPTION OF RISK</h4>
+    <p>In consideration of the services of City tour guide inc, their agents, owners, officers, volunteers, personnel, and all other persons or entities acting in any capacity on their behalf (hereinafter collectively referred to as "CTG"), I hereby agree to release, indemnify, and discharge CTG, on behalf of myself, my spouse, my children, my parents, my heirs, assigns, personal representative and estate as follows:</p>
+    <ol>
+      <li>I acknowledge that my participation in golf cart activities entails known and unanticipated risks that could result in physical or emotional injury, paralysis, death, or damage to myself, to property, or to third parties. I understand that such risks simply cannot be eliminated without jeopardizing the essential qualities of the activity.<br><br>
+      <strong>The risks include, among other things:</strong> slip &amp; falls; collision with fixed objects or people; exposure to the elements could cause sunburn, dehydration, heat exhaustion, heat stroke, and heat cramps; equipment failure or operator error; accidents involving other vehicles; falls from the cart; the negligence of other operators of vehicles or myself; transmissible pathogen or disease; weather conditions; my own physical condition; contact with animals or insects; all of which could result in musculoskeletal or other injuries including head, neck, and back injuries.</li>
+      <li>I expressly agree and promise to accept and assume all of the risks existing in this activity. My participation in this activity is purely voluntary, and I elect to participate in spite of the risks. Additionally, I agree to wear my seat belt while participating in this activity.</li>
+      <li>I hereby voluntarily release, forever discharge, and agree to indemnify and hold harmless CTG from any and all claims, demands, or causes of action, which are in any way connected with my participation in this activity or my use of CTG's equipment or facilities, <strong>including any such claims which allege negligent acts or omissions of CTG.</strong></li>
+      <li>Should CTG or anyone acting on their behalf, be required to incur attorney's fees and costs to enforce this agreement, I agree to indemnify and hold them harmless for all such fees and costs.</li>
+      <li>I certify that I have adequate insurance to cover any injury or damage I may cause or suffer while participating, or else I agree to bear the costs of such injury or damage myself. I further certify that I am willing to assume the risk of any medical or physical condition I may have.</li>
+      <li>In the event that I file a lawsuit against CTG, I agree to do so solely in the state of Florida, and I further agree that the substantive law of that state shall apply in that action without regard to the conflict of law rules of that state. I agree that if any portion of this agreement is found to be void or unenforceable, the remaining document shall remain in full force and effect.</li>
+    </ol>
+    <p class="doc-bold">By signing this document, I acknowledge that if anyone is hurt or property is damaged during my participation in this activity, I may be found by a court of law to have waived my right to maintain a lawsuit against CTG on the basis of any claim from which I have released them herein. I also agree that this document is valid for subsequent visits and participation at CTG. I have had sufficient opportunity to read this entire document. I have read and understood it, and I agree to be bound by its terms.</p>
+
+    <div class="doc-fields">
+      <div class="doc-field-row">
+        ${field('Print Name', name, 2.5)}
+        ${field('DOB', dob, 1)}
+        ${field('Phone Number', phone, 1.5)}
+      </div>
+      <div class="doc-field-row" style="margin-top:8px">
+        ${field('Address', address, 2)}
+        ${field('City', city, 1.5)}
+      </div>
+      <div class="doc-field-row" style="margin-top:8px">
+        ${field('State', state, 0.8)}
+        ${field('Zip', zip, 0.8)}
+        ${field('Email', email, 2)}
+      </div>
+
+      <!-- DocuSign-style signature zone -->
+      <div class="doc-sig-zone">
+        <div class="doc-sig-field">
+          <div class="df-label">Signature of Participant</div>
+          <div class="sig-click-area" id="sig-click-area" onclick="openSignModal()" title="Click to sign">
+            <span class="sig-click-label" id="sig-click-label">✍ Click here to sign</span>
+          </div>
+        </div>
+        <div class="doc-date-field">
+          <div class="df-label">Date</div>
+          <div class="df-value">${today}&nbsp;</div>
+        </div>
+      </div>
+    </div>
+    ${minorHTML}
+  `;
+}
+
+// ── DocuSign-style signature modal ──────────────────────────────────────────
+function onDocScroll() {
+  const el = document.getElementById('doc-preview');
+  if (!el) return;
+  const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
+  if (atBottom) {
+    const hint = document.getElementById('doc-scroll-hint');
+    if (hint) { hint.textContent = '✓ Form reviewed — please sign and confirm below'; hint.style.color = '#16a34a'; }
+    const wrap = document.getElementById('agree-confirm-wrap');
+    const cb   = document.getElementById('agree-confirm');
+    if (wrap) wrap.classList.remove('agree-locked');
+    if (cb)   cb.disabled = false;
+  }
+}
+
+function openSignModal() {
+  document.getElementById('sig-modal').classList.add('show');
+  // Wait one animation frame so the modal is painted and has real dimensions
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {   // two rAF to guarantee layout pass
+      initSigCanvas();
+      clearSig();
+    });
+  });
+}
+
+function closeSignModal() {
+  document.getElementById('sig-modal').classList.remove('show');
+}
+
+function applySignature() {
+  if (!sigHasMark) {
+    alert('Please draw your signature before placing it.');
+    return;
+  }
+  const canvas   = document.getElementById('sig-canvas');
+  const sigData  = canvas.toDataURL('image/png');
+  const area     = document.getElementById('sig-click-area');
+  const lbl      = document.getElementById('sig-click-label');
+  if (area) {
+    if (lbl) lbl.style.display = 'none';
+    // Remove existing img if re-signing
+    area.querySelectorAll('img').forEach(i => i.remove());
+    const img = document.createElement('img');
+    img.src = sigData;
+    img.style.cssText = 'max-height:44px;width:auto;max-width:100%;';
+    area.appendChild(img);
+    area.style.background = 'white';
+    area.style.cursor = 'pointer';
+    area.title = 'Click to re-sign';
+  }
+  closeSignModal();
+  // Clear any existing sig error
+  document.getElementById('sig-error').style.display = 'none';
+}
+
+
+
+function goBackToInfo() {
+  currentStep = 4;
+  showStep(4);
+}
+
+// ══════════════════════
+// STICKY FORM (localStorage + URL params)
+// ══════════════════════
+const STICKY_KEY = 'ctg_waiver_form';
+const FORM_FIELDS = ['f-name','f-dob','f-dob-text','f-phone','f-email','f-address','f-city','f-state','f-zip'];
+
+function saveFormData() {
+  const data = {};
+  FORM_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value.trim()) data[id] = el.value.trim();
+  });
+  try { localStorage.setItem(STICKY_KEY, JSON.stringify(data)); } catch(_) {}
+}
+
+function loadStickyForm() {
+  // 1. URL params take priority: ?name=John&email=john@x.com&phone=&dob=&address=&city=&state=&zip=
+  const params = new URLSearchParams(window.location.search);
+  const urlMap = { name:'f-name', email:'f-email', phone:'f-phone',
+                   dob:'f-dob', address:'f-address', city:'f-city',
+                   state:'f-state', zip:'f-zip' };
+  let filled = false;
+  Object.entries(urlMap).forEach(([p, id]) => {
+    if (params.get(p)) {
+      const el = document.getElementById(id);
+      if (el) { el.value = params.get(p); filled = true; }
+    }
+  });
+  if (params.get('name')) {
+    const el = document.getElementById('f-dob-text');
+    if (el && params.get('dob')) el.value = params.get('dob');
+  }
+  if (filled) return;   // URL params win — skip localStorage
+
+  // 2. Restore from localStorage
+  let stickyFilled = 0;
+  try {
+    const saved = JSON.parse(localStorage.getItem(STICKY_KEY) || '{}');
+    FORM_FIELDS.forEach(id => {
+      if (saved[id]) {
+        const el = document.getElementById(id);
+        if (el && !el.value) { el.value = saved[id]; stickyFilled++; }
+      }
+    });
+  } catch(_) {}
+  window._stickyWasUsed = stickyFilled > 0;
+}
+
+function clearStickyForm() {
+  try { localStorage.removeItem(STICKY_KEY); } catch(_) {}
+}
+
+function updateProgress() {
+  const seq   = getStepSequence().filter(s => s !== 7);
+  const idx   = seq.indexOf(currentStep);
+  const total = seq.length;
+  const pct   = idx >= 0 ? Math.round((idx / (total - 1)) * 100) : 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function updateNav() {
+  const nav  = document.getElementById('bottom-nav');
+  const back = document.getElementById('btn-back');
+  const next = document.getElementById('btn-next');
+  nav.style.display  = currentStep === 7 ? 'none' : 'flex';
+  back.style.display = currentStep === 1 ? 'none' : 'block';
+    next.textContent   = currentStep === 6 ? '✅ Submit Waiver' : 'Continue →';
+  next.onclick       = currentStep === 6 ? submitWaiver : nextStep;
+  next.disabled      = currentStep === 1 && !waiverType;
+}
+
+// ══════════════════════
+// VALIDATION
+// ══════════════════════
+function validateStep(step) {
+  if (step === 0) {
+    if (!selectedSource) {
+      const err = document.getElementById('src-error');
+      err.style.display = 'block';
+      err.scrollIntoView({ behavior:'smooth', block:'center' });
+      return false;
+    }
+    document.getElementById('src-error').style.display = 'none';
+    return true;
+  }
+  if (step === 1) return !!waiverType;
+  if (step === 2) {
+    if (!document.getElementById('agree-adult').checked) {
+      alert('Please read and check the agreement to continue.');
+      return false;
+    }
+    return true;
+  }
+  // Note: step 3 was merged into step 6 Review & Sign — agree-minor is now inside the review waiver
+  if (step === 4) return validateInfo();
+  if (step === 5) return validateMinors();
+  return true;
+}
+
+function validateInfo() {
+  const name = document.getElementById('f-name').value.trim();
+  const dob  = document.getElementById('f-dob').value;
+  const err  = document.getElementById('info-error');
+  if (!name || !dob) {
+    err.style.display = 'block';
+    document.getElementById('f-name').focus();
+    return false;
+  }
+  err.style.display = 'none';
+  saveFormData();   // persist for next visit
+  return true;
+}
+
+function validateMinors() {
+  for (let i = 1; i <= minorCount; i++) {
+    const fn = document.getElementById(`m-fn-${i}`)?.value.trim();
+    const ln = document.getElementById(`m-ln-${i}`)?.value.trim();
+    const bd = document.getElementById(`m-dob-${i}`)?.value;
+    if (!fn || !ln || !bd) {
+      document.getElementById('minor-error').style.display = 'block';
+      return false;
+    }
+  }
+  document.getElementById('minor-error').style.display = 'none';
+  return true;
+}
+
+// ══════════════════════
+// SOURCE SELECTION
+// ══════════════════════
+function selectSource(src) {
+  selectedSource = src;
+  document.querySelectorAll('.source-chip').forEach(c => c.classList.remove('selected'));
+  let chipId = 'src-' + src.toLowerCase().replace(/\s+/g,'');
+  if (src === 'Recommended' || src.startsWith('Recommended by')) chipId = 'src-recommended';
+  if (src === 'Other' || src.startsWith('Other:')) chipId = 'src-other';
+  const el = document.getElementById(chipId);
+  if (el) el.classList.add('selected');
+
+  // Show/hide reveal fields
+  const recReveal   = document.getElementById('rec-reveal');
+  const otherReveal = document.getElementById('other-reveal');
+  if (recReveal)   recReveal.style.display   = (chipId === 'src-recommended') ? 'block' : 'none';
+  if (otherReveal) otherReveal.style.display = (chipId === 'src-other')        ? 'block' : 'none';
+  // Focus the revealed input
+  setTimeout(() => {
+    if (chipId === 'src-recommended') document.getElementById('rec-name')?.focus();
+    if (chipId === 'src-other')       document.getElementById('other-name')?.focus();
+  }, 50);
+
+  // Always clear the returning guest path when a regular source is chosen
+  document.getElementById('src-returning').classList.remove('selected');
+  document.getElementById('src-returning-label').textContent = 'Returning Guest — tap to look up your info';
+  const inp = document.getElementById('lookup-input');
+  const btn = document.querySelector('.btn-lookup');
+  inp.disabled = true; btn.disabled = true; inp.value = '';
+  document.getElementById('lookup-status').className = '';
+  document.getElementById('lookup-status').textContent = '';
+  document.getElementById('lookup-contact-links').style.display = 'none';
+  document.getElementById('src-error').style.display = 'none';
+}
+
+// Returning Guest is mutually exclusive with all other source chips
+function selectSourceReturning() {
+  selectedSource = 'Returning Guest';
+  document.querySelectorAll('#source-grid .source-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('src-returning').classList.add('selected');
+  document.getElementById('src-error').style.display = 'none';
+  // Hide reveal fields
+  const rr = document.getElementById('rec-reveal');
+  const or = document.getElementById('other-reveal');
+  if (rr) rr.style.display = 'none';
+  if (or) or.style.display = 'none';
+  const inp = document.getElementById('lookup-input');
+  const btn = document.querySelector('.btn-lookup');
+  inp.disabled = false; btn.disabled = false;
+  setTimeout(() => {
+    inp.scrollIntoView({ behavior:'smooth', block:'center' });
+    inp.focus();
+    const section = document.getElementById('lookup-section');
+    section.style.transition = 'box-shadow .3s';
+    section.style.boxShadow = '0 0 0 2px var(--green)';
+    section.style.borderRadius = '8px';
+    setTimeout(() => { section.style.boxShadow = ''; }, 1800);
+  }, 100);
+}
+
+function scrollToLookup() {
+  const section = document.getElementById('lookup-section');
+  const divider = document.getElementById('lookup-divider');
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    section.style.transition = 'box-shadow .3s';
+    section.style.boxShadow = '0 0 0 2px var(--green)';
+    section.style.borderRadius = '8px';
+    setTimeout(() => { section.style.boxShadow = ''; }, 1800);
+  }
+  if (divider) { divider.style.color = 'var(--green)'; setTimeout(() => { divider.style.color = ''; }, 1800); }
+  document.getElementById('lookup-input')?.focus();
+}
+
+function updateRecName() {
+  const v = document.getElementById('rec-name').value.trim();
+  selectedSource = v ? `Recommended by: ${v}` : 'Recommended';
+  document.getElementById('src-recommended').classList.add('selected');
+}
+
+function updateOtherName() {
+  const v = document.getElementById('other-name').value.trim();
+  selectedSource = v ? `Other: ${v}` : 'Other';
+  document.getElementById('src-other').classList.add('selected');
+}
+
+// ══════════════════════
+// RETURNING GUEST LOOKUP
+// ══════════════════════
+async function lookupGuest() {
+  const val = document.getElementById('lookup-input').value.trim();
+  const statusEl = document.getElementById('lookup-status');
+  if (!val) return;
+
+  statusEl.className = '';
+  statusEl.textContent = '🔍 Looking up…';
+  statusEl.style.display = 'block';
+
+  try {
+    const resp = await fetch('/api/lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: val })
+    });
+    const json = await resp.json();
+
+    if (json.found && json.data) {
+      prefillForm(json.data);
+      // Auto-set source to Returning Guest
+      selectedSource = 'Returning Guest';
+      document.querySelectorAll('.source-chip').forEach(c => c.classList.remove('selected'));
+      const retChip = document.getElementById('src-returning');
+      document.getElementById('src-returning-label').textContent =
+        json.data.print_name ? `Returning — ${json.data.print_name.split(' ')[0]}` : 'Returning Guest';
+      retChip.classList.add('selected');
+      document.getElementById('src-error').style.display = 'none';
+      statusEl.className = 'ok';
+      statusEl.textContent = `✓ Welcome back${json.data.print_name ? ', ' + json.data.print_name : ''}! Info filled in.`;
+      // Show tappable email/phone contact links
+      const links = document.getElementById('lookup-contact-links');
+      let html = '';
+      if (json.data.email) html += `<a class="link-email" href="mailto:${json.data.email}">📧 ${json.data.email}</a>`;
+      if (json.data.phone) html += `<a class="link-sms" href="sms:${json.data.phone}">📱 ${json.data.phone}</a>`;
+      if (html) { links.innerHTML = html; links.style.display = 'flex'; }
+    } else {
+      statusEl.className = 'err';
+      statusEl.textContent = '✗ No record found. Please fill in your details on the next steps.';
+    }
+  } catch(e) {
+    statusEl.className = 'err';
+    statusEl.textContent = '✗ Lookup failed. Please fill in your details manually.';
+  }
+}
+
+function prefillForm(d) {
+  window._stickyWasUsed = false; // ID scan used — don't show sticky badge
+  if (d.print_name) document.getElementById('f-name').value    = d.print_name;
+  if (d.dob)        document.getElementById('f-dob').value     = d.dob;
+  if (d.phone)      document.getElementById('f-phone').value   = d.phone;
+  if (d.email)      document.getElementById('f-email').value   = d.email;
+  if (d.address)    document.getElementById('f-address').value = d.address;
+  if (d.city)       document.getElementById('f-city').value    = d.city;
+  if (d.state)      document.getElementById('f-state').value   = d.state;
+  if (d.zip)        document.getElementById('f-zip').value     = d.zip;
+  if (d.marketing_opt_in) document.getElementById('f-marketing').checked = true;
+}
+
+// ══════════════════════
+// TYPE SELECTION
+// ══════════════════════
+function selectType(type) {
+  waiverType = type;
+  document.getElementById('type-adult').classList.toggle('selected', type === 'adult_only');
+  document.getElementById('type-minors').classList.toggle('selected', type === 'adult_with_minors');
+  document.getElementById('btn-next').disabled = false;
+  renderMinorFields();
+}
+
+// ══════════════════════
+// SCROLL TRACKER
+// ══════════════════════
+function checkScroll(boxId, doneId, cbId, wrapId, promptId) {
+  const box  = document.getElementById(boxId);
+  const done = document.getElementById(doneId);
+  if (!box || !done) return;
+  if (box.scrollTop + box.clientHeight < box.scrollHeight - 40) return;
+
+  done.style.display = 'block';
+
+  // Resolve IDs: use passed-in params, or fall back to legacy adult/minor logic
+  const resolvedCbId     = cbId     || (boxId === 'adult-waiver-box' ? 'agree-adult'         : 'agree-minor');
+  const resolvedWrapId   = wrapId   || (boxId === 'adult-waiver-box' ? 'agree-adult-wrap'    : 'agree-minor-wrap');
+  const resolvedPromptId = promptId || (boxId === 'adult-waiver-box' ? 'adult-scroll-prompt' : 'minor-scroll-prompt');
+
+  const cb   = document.getElementById(resolvedCbId);
+  const wrap = document.getElementById(resolvedWrapId);
+  const pmt  = document.getElementById(resolvedPromptId);
+  if (cb)   { cb.disabled = false; }
+  if (wrap) { wrap.classList.remove('agree-locked'); wrap.style.cursor = 'pointer'; }
+  if (pmt)  { pmt.style.display = 'none'; }
+}
+
+// ══════════════════════
+// ID UPLOAD
+// ══════════════════════
+async function handleIDUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  // Reset so same file can be re-selected if needed
+  input.value = '';
+  showIDStatus('loading', '🔍 Reading your ID…');
+  showLoading('Extracting info from your ID…');
+
+  try {
+    // ── Convert ANY format (HEIC, PNG, WebP, huge JPEG) → JPEG via canvas ──
+    const jpegBlob = await new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1600;
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (w > MAX || h > MAX) {
+          const ratio = Math.min(MAX / w, MAX / h);
+          w = Math.round(w * ratio); h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('canvas toBlob failed')),
+                      'image/jpeg', 0.92);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image load failed')); };
+      img.src = url;
+    });
+
+    const formData = new FormData();
+    formData.append('photo', jpegBlob, 'id.jpg');
+
+    const resp = await fetch('/api/parse-id', { method: 'POST', body: formData });
+    const json = await resp.json();
+    hideLoading();
+    if (json.success && json.data) {
+      fillFromID(json.data);
+      showIDStatus('success', '✓ ID scanned successfully — please review the fields below.');
+    } else {
+      showIDStatus('error', json.error || '✗ Could not read ID. Please fill in manually.');
+    }
+  } catch(e) {
+    hideLoading();
+    showIDStatus('error', '✗ Scan failed. Please fill in manually.');
+    console.warn('handleIDUpload error:', e.message);
+  }
+}
+
+function fillFromID(d) {
+  window._stickyWasUsed = false; // ID scan fills the form — not sticky
+  const fill = (id, val) => {
+    if (!val) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = val;
+    // Green flash so guest clearly sees what was auto-filled
+    el.style.transition = 'background 0.3s';
+    el.style.background = '#dcfce7';
+    setTimeout(() => { el.style.background = ''; }, 2000);
+  };
+
+  fill('f-name',    d.name);
+  fill('f-address', d.address);
+  fill('f-city',    d.city);
+  fill('f-state',   d.state ? d.state.toUpperCase() : '');
+  fill('f-zip',     d.zip);
+
+  if (d.dob) {
+    // d.dob comes as MM/DD/YYYY from Gemini
+    const p = d.dob.split('/');
+    if (p.length === 3) {
+      const iso = `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
+      fill('f-dob', iso);                    // hidden date input
+      fill('f-dob-text', d.dob);             // visible text input
+    } else {
+      fill('f-dob-text', d.dob);
+    }
+  }
+}
+
+function showIDStatus(type, msg) {
+  const el = document.getElementById('id-status');
+  el.className = type; el.textContent = msg;
+}
+
+// ══════════════════════
+// MINOR FIELDS
+// ══════════════════════
+function setMinorCount(n) {
+  minorCount = n;
+  document.querySelectorAll('.count-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.n) === n));
+  renderMinorFields();
+}
+
+function renderMinorFields() {
+  const c = document.getElementById('minor-fields');
+  if (!c) return;
+  c.innerHTML = '';
+  for (let i = 1; i <= minorCount; i++) {
+    c.innerHTML += `
+      <div class="minor-card">
+        <h4>Child #${i}</h4>
+        <div class="row2">
+          <div class="form-group">
+            <label for="m-fn-${i}">First Name <span class="req">*</span></label>
+            <input type="text" id="m-fn-${i}" placeholder="First name">
+          </div>
+          <div class="form-group">
+            <label for="m-ln-${i}">Last Name <span class="req">*</span></label>
+            <input type="text" id="m-ln-${i}" placeholder="Last name">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="form-group">
+            <label for="m-dob-${i}">Date of Birth <span class="req">*</span></label>
+            <input type="date" id="m-dob-${i}" max="${new Date().toISOString().slice(0,10)}">
+          </div>
+          <div class="form-group">
+            <label for="m-rel-${i}">Relation</label>
+            <select id="m-rel-${i}">
+              <option>Child</option>
+              <option>Stepchild</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+function getMinors() {
+  return Array.from({ length: minorCount }, (_, i) => i + 1).map(i => ({
+    name:      `${document.getElementById(`m-fn-${i}`)?.value.trim()} ${document.getElementById(`m-ln-${i}`)?.value.trim()}`.trim(),
+    birthdate: document.getElementById(`m-dob-${i}`)?.value || '',
+    relation:  document.getElementById(`m-rel-${i}`)?.value || 'Child',
+  }));
+}
+
+// ══════════════════════
+// SIGNATURE
+// ══════════════════════
+let sigCanvasInited = false;   // event listeners attached?
+
+function initSigCanvas() {
+  const canvas = document.getElementById('sig-canvas');
+  const dpr    = window.devicePixelRatio || 1;
+
+  // Always re-measure so we never have a 0x0 canvas
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  canvas.width  = (w || canvas.clientWidth  || 320) * dpr;
+  canvas.height = (h || canvas.clientHeight || 180) * dpr;
+  sigCtx = canvas.getContext('2d');
+  sigCtx.scale(dpr, dpr);
+  sigCtx.strokeStyle = '#0f172a';
+  sigCtx.lineWidth   = 2.5;
+  sigCtx.lineCap     = 'round';
+  sigCtx.lineJoin    = 'round';
+
+  // Guard elements that may not exist in new layout
+  const dateEl = document.getElementById('sig-date-display');
+  if (dateEl) dateEl.textContent =
+    new Date().toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+
+  const markStarted = () => {
+    sigHasMark = true;
+    const hint = document.getElementById('sig-hint');
+    const wrap = document.getElementById('sig-wrap');
+    if (hint) hint.style.display = 'none';
+    if (wrap) wrap.classList.add('has-sig');
+  };
+
+  // Only attach events once — re-opening modal should NOT stack listeners
+  if (!sigCanvasInited) {
+    sigCanvasInited = true;
+
+    canvas.addEventListener('mousedown', e => {
+      sigDrawing = true; markStarted();
+      const p = sigPos(e, canvas); sigLastX = p.x; sigLastY = p.y;
+    });
+    canvas.addEventListener('mousemove',  e => sigDraw(e, canvas));
+    canvas.addEventListener('mouseup',    () => sigDrawing = false);
+    canvas.addEventListener('mouseleave', () => sigDrawing = false);
+
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault(); sigDrawing = true; markStarted();
+      const p = sigPos(e.touches[0], canvas); sigLastX = p.x; sigLastY = p.y;
+    }, { passive: false });
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault(); sigDraw(e.touches[0], canvas);
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => sigDrawing = false);
+  }
+
+  
+}
+
+
+function sigPos(e, canvas) {
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX || e.pageX) - r.left, y: (e.clientY || e.pageY) - r.top };
+}
+
+function sigDraw(e, canvas) {
+  if (!sigDrawing || !sigCtx) return;
+  const p = sigPos(e, canvas);
+  sigCtx.beginPath();
+  sigCtx.moveTo(sigLastX, sigLastY);
+  sigCtx.lineTo(p.x, p.y);
+  sigCtx.stroke();
+  sigLastX = p.x; sigLastY = p.y;
+}
+
+function clearSig() {
+  const c = document.getElementById('sig-canvas');
+  if (sigCtx && c) sigCtx.clearRect(0, 0, c.width, c.height);
+  sigHasMark = false;
+  const hint = document.getElementById('sig-hint');
+  const wrap = document.getElementById('sig-wrap');
+  if (hint) hint.style.display = '';
+  if (wrap) wrap.classList.remove('has-sig');
+}
+
+
+// ══════════════════════
+// DOB HELPERS
+// ══════════════════════
+function syncDobFromText(el) {
+  let v = el.value.replace(/[^\d]/g,'');
+  if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+  if (v.length >= 6) v = v.slice(0,5) + '/' + v.slice(5,9);
+  el.value = v;
+  const parts = v.split('/');
+  if (parts.length===3 && parts[2].length===4)
+    document.getElementById('f-dob').value = `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+}
+function syncDobFromPicker(picker) {
+  const parts = picker.value.split('-');
+  if (parts.length===3)
+    document.getElementById('f-dob-text').value = `${parts[1]}/${parts[2]}/${parts[0]}`;
+}
+function getDobValue() {
+  return document.getElementById('f-dob').value;
+}
+
+// ══════════════════════
+// PDF GENERATION
+// ══════════════════════
+let lastPayload = null;
+
+function generateClientPDF(payload, waiverId) {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
+    const PW = 612, PH = 792, ML = 72, MR = 540, TW = 468;
+    const signedAt = new Date().toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+    const refId = 'CTG-' + waiverId.slice(0,8).toUpperCase();
+
+    function fmt(v) { return v || ''; }
+    function fmtDob(d) {
+      if (!d) return '';
+      const p = d.split('-');
+      if (p.length===3) return `${parseInt(p[1])}/${parseInt(p[2])}/${p[0].slice(2)}`;
+      return d;
+    }
+
+    // ── Draw a labeled underline field ──────────────────────────────────────────
+    // Label printed in small bold ABOVE the value line (like a modern form)
+    function drawField(label, value, x, y, lineEndX) {
+      // Row 1: small bold label
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(60,60,60);
+      doc.text(label, x, y);
+      // Row 2: value text in normal 9pt, clipped to line width
+      const lineW = lineEndX - x;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      if (value) {
+        const maxW = lineW - 4;
+        const vLines = doc.splitTextToSize(value, maxW);
+        doc.text(vLines[0], x, y + 11); // only first line (keep single row)
+      }
+      // Underline at y+14 (below value text)
+      doc.setLineWidth(0.5); doc.setDrawColor(0,0,0);
+      doc.line(x, y + 14, lineEndX, y + 14);
+    }
+
+
+    // ── Justified paragraph helper ───────────────────────────────────────────────
+    function para(text, x, y, width, fontSize, bold, italic) {
+      const style = italic ? 'italic' : (bold ? 'bold' : 'normal');
+      doc.setFont('helvetica', style); doc.setFontSize(fontSize || 9);
+      doc.setTextColor(0,0,0);
+      const lines = doc.splitTextToSize(text, width);
+      doc.text(lines, x, y);   // no maxWidth — lines already split by splitTextToSize
+      return y + lines.length * (fontSize || 9) * 1.35;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // PAGE 1 — ADULT WAIVER
+    // ════════════════════════════════════════════════════════════
+    let y = 55;
+
+    // Title
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0,0,0);
+    doc.text('PARTICIPANT AGREEMENT, RELEASE AND ASSUMPTION OF RISK', PW/2, y, {align:'center'});
+    y += 20;
+
+    // Intro
+    y = para('In consideration of the services of City tour guide inc, their agents, owners, officers, volunteers, personnel, and all other persons or entities acting in any capacity on their behalf (hereinafter collectively referred to as \u201cCTG\u201d), I hereby agree to release, indemnify, and discharge CTG, on behalf of myself, my spouse, my children, my parents, my heirs, assigns, personal representative and estate as follows:', ML, y, TW, 9);
+    y += 8;
+
+    // Item 1 (with bold risk sub-text)
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    const item1a = 'I acknowledge that my participation in golf cart activities entails known and unanticipated risks that could result in physical or emotional injury, paralysis, death, or damage to myself, to property, or to third parties. I understand that such risks simply cannot be eliminated without jeopardizing the essential qualities of the activity.';
+    const item1aLines = doc.splitTextToSize('1.  ' + item1a, TW);
+    doc.text(item1aLines, ML, y); y += item1aLines.length * 13 + 6;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    const riskLabel = 'The risks include, among other things:';
+    doc.text(riskLabel, ML, y);
+    const rlw = doc.getTextWidth(riskLabel);
+    doc.setFont('helvetica','normal');
+    const riskText = ' slip & falls; collision with fixed objects or people; exposure to the elements could cause sunburn, dehydration, heat exhaustion, heat stroke, and heat cramps; equipment failure or operator error; accidents involving other vehicles; falls from the cart; the negligence of other operators of vehicles or myself; transmissible pathogen or disease; weather conditions; my own physical condition; contact with animals or insects; all of which could result in musculoskeletal or other injuries including head, neck, and back injuries.';
+    const riskFull = riskLabel + riskText;
+    const riskLines = doc.splitTextToSize(riskFull, TW);
+    // Re-render properly: first line has bold label, rest plain
+    doc.setFont('helvetica','bold');
+    const rl0 = doc.splitTextToSize(riskLabel, TW)[0];
+    doc.text(rl0, ML, y);
+    doc.setFont('helvetica','normal');
+    const restRisk = doc.splitTextToSize(riskText.trim(), TW - rlw - 4);
+    doc.text(restRisk[0], ML + rlw + 4, y);
+    if (restRisk.length > 1) {
+      const moreLines = doc.splitTextToSize(riskText.trim(), TW);
+      // skip first line (already printed), print rest
+      for (let ri = 1; ri < moreLines.length; ri++) {
+        y += 13;
+        doc.text(moreLines[ri], ML, y);
+      }
+    }
+    y += 14;
+
+    // Items 2–6
+    const items = [
+      '2.  I expressly agree and promise to accept and assume all of the risks existing in this activity. My participation in this activity is purely voluntary, and I elect to participate in spite of the risks. Additionally, I agree to wear my seat belt while participating in this activity.',
+      '3.  I hereby voluntarily release, forever discharge, and agree to indemnify and hold harmless CTG from any and all claims, demands, or causes of action, which are in any way connected with my participation in this activity or my use of CTG\u2019s equipment or facilities, including any such claims which allege negligent acts or omissions of CTG.',
+      '4.  Should CTG or anyone acting on their behalf, be required to incur attorney\u2019s fees and costs to enforce this agreement, I agree to indemnify and hold them harmless for all such fees and costs.',
+      '5.  I certify that I have adequate insurance to cover any injury or damage I may cause or suffer while participating, or else I agree to bear the costs of such injury or damage myself. I further certify that I am willing to assume the risk of any medical or physical condition I may have.',
+      '6.  In the event that I file a lawsuit against CTG, I agree to do so solely in the state of Florida, and I further agree that the substantive law of that state shall apply in that action without regard to the conflict of law rules of that state. I agree that if any portion of this agreement is found to be void or unenforceable, the remaining document shall remain in full force and effect.'
+    ];
+    items.forEach(text => {
+      const lines = doc.splitTextToSize(text, TW);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      // Clause 3: bold the 'including any such claims...' portion
+      if (text.startsWith('3.')) {
+        const splitIdx = text.indexOf('including any such claims');
+        const part1 = text.slice(0, splitIdx);
+        const part2 = text.slice(splitIdx);
+        const p1Lines = doc.splitTextToSize(part1, TW);
+        doc.text(p1Lines, ML, y);
+        const p1H = p1Lines.length * 13;
+        doc.setFont('helvetica','bold');
+        const p2Lines = doc.splitTextToSize(part2, TW);
+        doc.text(p2Lines, ML, y + p1H);
+        y += p1Lines.length * 13 + p2Lines.length * 13 + 6;
+      } else {
+        doc.text(lines, ML, y);
+        y += lines.length * 13 + 6;
+      }
+    });
+
+    y += 4;
+    // Bold closing statement
+    const closing = 'By signing this document, I acknowledge that if anyone is hurt or property is damaged during my participation in this activity, I may be found by a court of law to have waived my right to maintain a lawsuit against CTG on the basis of any claim from which I have released them herein. I also agree that this document is valid for subsequent visits and participation at CTG. I have had sufficient opportunity to read this entire document.  I have read and understood it, and I agree to be bound by its terms.';
+    const closingLines = doc.splitTextToSize(closing, TW);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text(closingLines, ML, y);
+    y += closingLines.length * 13 + 16;
+
+    // ── Signature fields — Row 1: Print Name | DOB | Phone Number ────────────
+    drawField('Print Name', fmt(payload.print_name), ML, y, ML + 230);
+    drawField('DOB', fmtDob(payload.dob), ML + 244, y, ML + 320);
+    drawField('Phone Number', fmt(payload.phone), ML + 333, y, MR);
+    y += 28;
+
+    // Row 2: Address | City
+    drawField('Address', fmt(payload.address), ML, y, ML + 270);
+    drawField('City', fmt(payload.city), ML + 283, y, MR);
+    y += 28;
+
+    // Row 3: State | Zip | Email
+    drawField('State', fmt(payload.state), ML, y, ML + 85);
+    drawField('Zip', fmt(payload.zip), ML + 98, y, ML + 185);
+    drawField('Email', fmt(payload.email), ML + 198, y, MR);
+    y += 28;
+
+    // Row 4: Signature | Date
+    drawField('Signature of Participant', '', ML, y, ML + 265);
+    drawField('Date', new Date().toLocaleDateString('en-US'), ML + 278, y, MR);
+
+    // Embed signature image — below the label, over the underline
+    if (payload.signature_data && payload.signature_data.startsWith('data:image')) {
+      try {
+        // y+2 = just below 'SIGNATURE OF PARTICIPANT' label, height 14 = through the underline
+        doc.addImage(payload.signature_data, 'PNG', ML + 5, y + 2, 255, 14);
+      } catch(e2) {}
+    }
+    y += 28;
+
+    // ════════════════════════════════════════════════════════════
+    // PAGE 2 — MINOR WAIVER (only if adult_with_minors)
+    // ════════════════════════════════════════════════════════════
+    if (payload.waiver_type === 'adult_with_minors') {
+      doc.addPage();
+      y = 45;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text('City tour guide inc', PW/2, y, {align:'center'}); y += 14;
+      doc.setFontSize(10);
+      doc.text('PERPETUAL WAIVER AND RELEASE', PW/2, y, {align:'center'}); y += 13;
+      doc.setFontSize(9);
+      doc.text('(VALID FOR EACH AND EVERY DATE OF PARTICIPATION)', PW/2, y, {align:'center'}); y += 16;
+
+      y = para('We want you to have a great experience with us. However, for your protection and ours, you must read and agree to the provisions below before you are authorized to use our facilities and/or services. The different activities that are offered entail certain risks that simply cannot be eliminated without jeopardizing the essential qualities of the activity. If you are unable or unwilling to sign this Waiver and Release, you are welcome to enjoy yourself by watching others, but we cannot allow you to personally participate in any of our activities or actively use our facilities and/or services.', ML, y, TW, 9);
+      y += 12;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text('NOTICE TO THE MINOR CHILD\u2019S NATURAL GUARDIAN', PW/2, y, {align:'center'}); y += 14;
+
+      const warning = 'READ THIS FORM COMPLETELY AND CAREFULLY. YOU ARE AGREEING TO LET YOUR MINOR CHILD ENGAGE IN A POTENTIALLY DANGEROUS ACTIVITY. YOU ARE AGREEING THAT, EVEN IF City tour guide inc USES REASONABLE CARE IN PROVIDING THIS ACTIVITY, THERE IS A CHANCE YOUR CHILD MAY BE SERIOUSLY INJURED OR KILLED BY PARTICIPATING IN THIS ACTIVITY BECAUSE THERE ARE CERTAIN DANGERS INHERENT IN THE ACTIVITY WHICH CANNOT BE AVOIDED OR ELIMINATED. BY SIGNING THIS FORM, YOU ARE GIVING UP YOUR CHILD\u2019S RIGHT AND YOUR RIGHT TO RECOVER FROM City tour guide inc IN A LAWSUIT FOR ANY PERSONAL INJURY, INCLUDING DEATH, TO YOUR CHILD OR ANY PROPERTY DAMAGE THAT RESULTS FROM THE RISKS THAT ARE A NATURAL PART OF THE ACTIVITY. YOU HAVE THE RIGHT TO REFUSE TO SIGN THIS FORM, AND City tour guide inc HAS THE RIGHT TO REFUSE TO LET YOUR CHILD PARTICIPATE IF YOU DO NOT SIGN THIS FORM.';
+      const warnLines = doc.splitTextToSize(warning, TW);
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text(warnLines, ML, y);
+      y += warnLines.length * 13 + 14;
+
+      // Print name line
+      const nameLineW = doc.getTextWidth(fmt(payload.print_name) || '                               ');
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      doc.text(fmt(payload.print_name), ML, y);
+      doc.setLineWidth(0.5); doc.line(ML, y+3, ML + Math.max(nameLineW + 4, 150), y+3);
+      doc.text(' (PRINT YOUR NAME) has read this Waiver and Release and agrees as follows:', ML + Math.max(nameLineW + 4, 152), y);
+      y += 18;
+
+      const minorItems2 = [
+        '1.  I recognize and agree that: all risks can never be eliminated, and participating in the activities at City tour guide inc involves inherent danger and potential risk of both minor and serious, temporary and permanent, bodily injury of any and all kinds, both caused by me and/or by others. In signing this release, I assume all risk for, and financial cost of, any and all injuries, and/or any damage, to my child/children.',
+        '2.  On behalf of my minor child/children I fully, and forever waive, release and discharge City tour guide inc and its individual members, managers, directors, officers, agents, employees, volunteers, representatives, affiliated entities, and all other persons, firms, corporations, associations or partnerships claiming by or through them, from any and all claims, actions, causes of action, demands, judgments, damages (including compensatory, general, special, consequential, and exemplary), liability or obligations of any nature or kind, whether known at the time or which may arise or become known later, which accrue on account of, or in any way arise out of or in connection with me or my child\u2019s activities with or at City tour guide inc including claims involving their own negligence.',
+        '3.  I agree to indemnify and hold harmless City tour guide inc and its individual managers, directors, officers, agents, employees, volunteers, representatives, affiliated entities, and all other persons, corporations, or partnerships claiming by or through them, from and against any and all losses, liabilities, claims, obligations, costs, damages, and/or judgments directly or indirectly arising out of, or relating to, my child\u2019s/children\u2019s participation in any activities at City tour guide inc, including for claims alleging City tour guide inc own negligence.',
+        '4.  I understand that this agreement extends forever into the future and will have full force and legal effect each and every time my child/children visit City tour guide inc whether at the current location or any other location or facility.'
+      ];
+      minorItems2.forEach(text => {
+        const lines = doc.splitTextToSize(text, TW);
+        doc.setFont('helvetica','normal'); doc.setFontSize(9);
+        doc.text(lines, ML, y);
+        y += lines.length * 13 + 6;
+      });
+
+      y += 4;
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text('I have read the City tour guide inc ', ML, y, {continued:false});
+      const p1w = doc.getTextWidth('I have read the City tour guide inc ');
+      doc.setFont('helvetica','italic');
+      doc.text('Waiver and Release from any Claim of Responsibility or Damage ', ML + p1w, y);
+      const p2w = doc.getTextWidth('Waiver and Release from any Claim of Responsibility or Damage ');
+      doc.setFont('helvetica','bold');
+      doc.text('and agree to all conditions.', ML + p1w + p2w, y);
+      y += 20;
+
+      // Guardian fields
+      drawField('Parent Name/Legal Guardian (Print):', fmt(payload.print_name), ML, y, MR);
+      y += 28;
+      drawField('Address', fmt(payload.address), ML, y, MR);
+      y += 28;
+      drawField('City', fmt(payload.city), ML, y, ML + 180);
+      drawField('State', fmt(payload.state), ML + 193, y, ML + 280);
+      drawField('Zip', fmt(payload.zip), ML + 293, y, MR);
+      y += 28;
+      drawField('Phone Number:', fmt(payload.phone), ML, y, ML + 185);
+      drawField('Date of Birth', fmtDob(payload.dob), ML + 198, y, MR);
+      y += 28;
+
+      // Signature
+      drawField('Signature', '', ML, y, ML + 265);
+      drawField('Today\u2019s date', new Date().toLocaleDateString('en-US'), ML + 278, y, MR);
+      if (payload.signature_data && payload.signature_data.startsWith('data:image')) {
+        try {
+          const sw2 = doc.getTextWidth('Signature');
+          doc.addImage(payload.signature_data, 'PNG', ML + sw2 + 4, y - 32, 130, 34);
+        } catch(e3) {}
+      }
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(80,80,80);
+      doc.text('(MM/DD/YY)', ML + 278 + doc.getTextWidth('Today\u2019s date') + 4, y + 10);
+      doc.setTextColor(0,0,0);
+      y += 24;
+
+      // Children table
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text('NAMES AND BIRTHDATES OF ALL CHILDREN UNDER 18 to be included with your signature', ML, y);
+      y += 16;
+
+      const minors = Array.isArray(payload.minors) ? payload.minors : [];
+      for (let i = 0; i < 4; i++) {
+        const m = minors[i] || {};
+        // MINOR NAME #N label + line
+        doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+        doc.text(`MINOR NAME #${i+1}`, ML, y);
+        const mnw = doc.getTextWidth(`MINOR NAME #${i+1}`);
+        doc.setFont('helvetica','normal');
+        if (m.name) doc.text(m.name, ML + mnw + 4, y);
+        doc.setLineWidth(0.5); doc.line(ML + mnw + 2, y+3, ML + 200, y+3);
+        // BIRTHDATE
+        doc.setFont('helvetica','bold'); doc.text('BIRTHDATE', ML + 214, y);
+        const bdw = doc.getTextWidth('BIRTHDATE');
+        doc.setFont('helvetica','normal');
+        if (m.birthdate) doc.text(m.birthdate, ML + 214 + bdw + 4, y);
+        doc.line(ML + 214 + bdw + 2, y+3, ML + 330, y+3);
+        // RELATION
+        doc.setFont('helvetica','bold'); doc.text('RELATION', ML + 344, y);
+        const rw = doc.getTextWidth('RELATION');
+        doc.setFont('helvetica','normal');
+        if (m.relation) doc.text(m.relation, ML + 344 + rw + 4, y);
+        doc.line(ML + 344 + rw + 2, y+3, MR, y+3);
+        // Sub-label
+        y += 9;
+        doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(80,80,80);
+        doc.text('First name, Last name', ML + mnw + 4, y);
+        doc.text('mm/dd/yy', ML + 214 + bdw + 4, y);
+        doc.setTextColor(0,0,0); doc.setFontSize(9);
+        y += 18;
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // FINAL PAGE — ELECTRONIC SIGNATURE CERTIFICATION
+    // ════════════════════════════════════════════════════════════
+    doc.addPage();
+    y = 50;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+    doc.text('ELECTRONIC SIGNATURE CERTIFICATION', PW/2, y, {align:'center'}); y += 18;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    const certText = 'This document constitutes a legally binding electronic signature pursuant to the Electronic Signatures in Global and National Commerce Act (ESIGN, 15 U.S.C. \u00a77001 et seq.) and the Uniform Electronic Transactions Act (UETA). The electronic signature above has the same legal effect, validity, and enforceability as a handwritten signature.';
+    y = para(certText, ML, y, TW, 8.5); y += 14;
+
+    const certFields = [
+      ['Waiver Reference ID', refId],
+      ['Participant Name', fmt(payload.print_name)],
+      ['Date & Time Signed', signedAt],
+      ['Document Version', 'City Tour Guide Inc Participant Waiver v2.0'],
+      ['Session Token (UUID)', waiverId],
+      ['Browser / Device', navigator.userAgent.slice(0,100)],
+    ];
+    certFields.forEach(([label, value]) => {
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+      doc.text(label + ':', ML, y);
+      doc.setFont('helvetica','normal');
+      const lw2 = doc.getTextWidth(label + ':');
+      const vLines = doc.splitTextToSize(value, TW - lw2 - 8);
+      doc.text(vLines, ML + lw2 + 6, y);
+      y += vLines.length * 12 + 4;
+    });
+
+    // ── Footer on every page ──
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setTextColor(150,150,150); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      doc.text(`City Tour Guide Inc  |  Waiver ID: ${refId}  |  Page ${p} of ${totalPages}`, PW/2, PH - 20, {align:'center'});
+    }
+
+    const fname = `CTG_Waiver_${new Date().toISOString().slice(0,10)}_${payload.print_name.replace(/\s+/g,'_')}.pdf`;
+    try {
+      const blob = doc.output('blob');
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = fname; a.target = '_blank';
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+    } catch(e3) {
+      window.open(doc.output('datauristring'), '_blank');
+    }
+  } catch(err) {
+    console.warn('PDF generation failed:', err);
+  }
+}
+
+
+
+// ══════════════════════
+// SUBMIT
+// ══════════════════════
+async function submitWaiver() {
+  const errEl  = document.getElementById('sig-error');
+  // Check that signature has been placed on the document
+  const sigArea = document.getElementById('sig-click-area');
+  const sigImg  = sigArea?.querySelector('img');
+  if (!sigImg) {
+    errEl.textContent = '⚠ Please click the signature field to sign the form.';
+    errEl.style.display = 'block';
+    sigArea?.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+  if (!document.getElementById('agree-confirm').checked) {
+    errEl.textContent = '⚠ Please check the confirmation box before submitting.';
+    errEl.style.display = 'block';
+    document.getElementById('agree-confirm-wrap').scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const btnNext = document.getElementById('btn-next');
+  btnNext.disabled = true;
+
+  const phone = (document.getElementById('f-phone')?.value.trim()) || '';
+  const email = (document.getElementById('f-email')?.value.trim()) || '';
+
+  // Build payload — signature_data comes from the placed image in the doc
+  const nowISO  = new Date().toISOString();
+  window._pendingPayload = {
+    waiver_type:      waiverType,
+    print_name:       (document.getElementById('f-name').value.trim()) || window.__hopperGuestName || '',
+    dob:              getDobValue(),
+    phone,
+    email,
+    address:          document.getElementById('f-address').value.trim(),
+    city:             document.getElementById('f-city').value.trim(),
+    state:            document.getElementById('f-state').value.trim(),
+    zip:              document.getElementById('f-zip').value.trim(),
+    signature_data:   sigImg.src,
+    token:           window.__hopperToken || null,
+    minors:           waiverType === 'adult_with_minors' ? getMinors() : [],
+    minor_count:      window._minorCount || 0,
+    signing_method:   window._signingMethod || 'handoff',
+    adult_phones:     window._adultPhones || [],
+    marketing_opt_in: document.getElementById('f-marketing').checked,
+    latitude:         null,
+    longitude:        null,
+    referral_source:  selectedSource || null,
+    _nowISO:          nowISO,
+  };
+
+  // If opt-in not checked, show "are you sure?" modal instead of submitting
+  if (!document.getElementById('f-marketing').checked) {
+    document.getElementById('photo-modal').classList.add('show');
+    return;
+  }
+  doSubmit();
+}
+
+function optInAndSubmit() {
+  document.getElementById('f-marketing').checked = true;
+  window._pendingPayload.marketing_opt_in = true;
+  document.getElementById('photo-modal').classList.remove('show');
+  doSubmit();
+}
+function skipOptInAndSubmit() {
+  document.getElementById('photo-modal').classList.remove('show');
+  doSubmit();
+}
+
+async function doSubmit() {
+  const payload = window._pendingPayload;
+  const nowISO  = payload._nowISO;
+  delete payload._nowISO;
+  showLoading('Submitting your waiver…');
+
+  try {
+    const resp = await fetch('/api/hopper-submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await resp.json();
+    hideLoading();
+
+    if (json.success) {
+      lastPayload = payload;
+      lastPayload.waiver_id = json.waiver_id;
+
+      // Always navigate to success screen, even if DOM population partially fails
+      try {
+        // Populate success screen
+        const waiverIdSafe = json.waiver_id || '';
+        const shortRef = 'CTG-' + waiverIdSafe.slice(0, 8).toUpperCase();
+        if (document.getElementById('success-name'))  document.getElementById('success-name').textContent  = payload.print_name || '';
+        if (document.getElementById('success-ref'))   document.getElementById('success-ref').textContent   = shortRef;
+        if (document.getElementById('stamp-id'))      document.getElementById('stamp-id').textContent      = shortRef;
+        if (document.getElementById('stamp-time'))    document.getElementById('stamp-time').textContent    = new Date(nowISO).toLocaleString('en-US', { month:'long', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short' });
+        if (document.getElementById('stamp-device'))  document.getElementById('stamp-device').textContent  = navigator.userAgent.split(' ').slice(-2).join(' ');
+        var stampGeoRow = document.getElementById('stamp-geo');
+        if (stampGeoRow && stampGeoRow.closest) { var _r = stampGeoRow.closest('.stamp-row'); if (_r) _r.style.display = 'none'; }
+        var pdfBtn = document.getElementById('btn-download-pdf');
+        if (pdfBtn) {
+          pdfBtn.removeAttribute('href');
+          pdfBtn.style.display = 'flex';
+          pdfBtn.onclick = function(e) { e.preventDefault(); generateClientPDF(lastPayload, lastPayload.waiver_id); };
+        }
+        currentStep = 7;
+        saveFormData();
+      } catch(_domErr) {
+        console.error('[waiver] DOM population error (non-fatal):', _domErr);
+      } finally {
+        showStep(7); // Always show success screen regardless of DOM errors
+      }
+
+      // Multi-guest handoff — fully wrapped, never blocks success screen
+      try {
+        var nw    = json.next_waiver;
+        var reqId = json.request_id || window.__hopperRequestId;
+        var gIdx  = window.__hopperGuestIndex || 1;
+        var saMain = document.getElementById('success-action-main');
+
+        if (nw && nw.url) {
+          if (saMain) saMain.style.display = 'block';
+          var rideBtn = document.getElementById('btn-go-to-ride');
+          if (rideBtn) { rideBtn.href = reqId ? '/request/' + reqId : '#'; rideBtn.textContent = 'View My Ride'; }
+          var lbl    = nw.guest_name || ('Guest ' + nw.guest_index);
+          var wUrl   = nw.url;
+          var qrUrl  = 'https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=' + encodeURIComponent(wUrl);
+          var smsTxt = encodeURIComponent('Sign your City Hopper waiver (60 sec): ' + wUrl);
+          var panel  = document.createElement('div');
+          panel.style.cssText = 'margin-top:20px;padding:18px 14px;background:#F0F9FF;border:2px solid #38BDF8;border-radius:18px;text-align:center';
+          panel.innerHTML =
+            '<p style="font-weight:800;font-size:1rem;color:#0B1D3A;margin:0 0 4px">' + lbl + ' needs to sign</p>' +
+            '<p style="font-size:0.78rem;color:#64748B;margin:0 0 14px">Scan or send the link below</p>' +
+            '<img src="' + qrUrl + '" style="border-radius:12px;border:4px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,0.12);width:185px;height:185px" alt="QR"/><br/>' +
+            '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px">' +
+            '<a href="sms:?body=' + smsTxt + '" style="padding:11px 18px;background:#059669;color:#fff;border-radius:12px;font-weight:700;font-size:0.82rem;text-decoration:none">Text Link</a>' +
+            '<a href="' + wUrl + '" style="padding:11px 18px;background:#0EA5E9;color:#fff;border-radius:12px;font-weight:700;font-size:0.82rem;text-decoration:none">Open Now</a>' +
+            '</div>';
+          if (saMain) saMain.appendChild(panel);
+        } else if (reqId) {
+          if (saMain) saMain.style.display = 'block';
+          var rideBtnB = document.getElementById('btn-go-to-ride');
+          if (rideBtnB) rideBtnB.href = '/request/' + reqId;
+          if (gIdx === 1) setTimeout(function() { window.location.href = '/request/' + reqId; }, 2500);
+        } else {
+          var gd = document.getElementById('success-action-guest');
+          if (gd) gd.style.display = 'block';
+        }
+      } catch(_hwErr) {
+        console.error('[waiver] Handoff render error (non-fatal):', _hwErr);
+        // Fallback: show plain ride status link if we have a request ID
+        var _fb = document.getElementById('success-action-main');
+        if (_fb && json.request_id) {
+          _fb.style.display = 'block';
+          _fb.innerHTML += '<p style="margin-top:16px"><a href="/request/' + json.request_id + '" style="color:#0EA5E9;font-weight:700">View Ride Status</a></p>';
+        }
+      }
+
+    } else {
+          var gd = document.getElementById("success-action-guest");
+          if (gd) gd.style.display = "block";
+        }
+      })()); } catch(_e) { console.error('[waiver] UI err:', _e); }
+
+    } else {
+      const _btn = document.getElementById('btn-next'); if (_btn) _btn.disabled = false;
+      const _errEl = document.getElementById('sig-error'); 
+      if (_errEl) { _errEl.textContent = '⚠️ ' + (json.error || 'Could not submit. Please try again.'); _errEl.style.display = 'block'; _errEl.scrollIntoView({behavior:'smooth',block:'center'}); }
+      console.error('[hopper-submit] error:', json.error);
+    }
+  } catch(e) {
+    hideLoading();
+    const _btn2 = document.getElementById('btn-next'); if (_btn2) _btn2.disabled = false;
+    const _errEl2 = document.getElementById('sig-error');
+    if (_errEl2) { _errEl2.textContent = '⚠️ Network error. Please check connection and try again.'; _errEl2.style.display = 'block'; }
+    console.error('[hopper-submit] network error:', e);
+  }
+}
+
+// ══════════════════════
+// HELPERS
+// ══════════════════════
+function showLoading(msg) {
+  document.getElementById('loading-msg').textContent = msg || 'Loading…';
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+
+function resetForm() {
+  waiverType = null; currentStep = 1; sigHasMark = false; sigCanvasInited = false;
+  selectedSource = null; capturedLat = null; capturedLon = null; lastWaiverId = null;
+  document.querySelectorAll('input[type=text],input[type=email],input[type=tel],input[type=date]')
+    .forEach(i => i.value = '');
+  document.querySelectorAll('input[type=checkbox]').forEach(i => i.checked = false);
+  document.getElementById('type-adult').classList.remove('selected');
+  document.getElementById('type-minors').classList.remove('selected');
+  document.querySelectorAll('.source-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('id-status').className = '';
+  document.getElementById('id-status').textContent = '';
+  document.getElementById('lookup-status').className = '';
+  document.getElementById('lookup-status').style.display = 'none';
+  document.getElementById('lookup-input').value = '';
+  showStep(1);
+}
+
+// ══════════════════════
+// INIT
+// ══════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('f-dob').max = new Date().toISOString().slice(0, 10);
+  renderMinorFields();
+  setMinorCount(1);
+  currentStep = 1;
+  showLoading('Loading…');
+  updateNav();
+
+  // ── Sticky detection: greet returning guests on page load ──
+  try {
+    const saved = JSON.parse(localStorage.getItem('ctg_waiver_form') || '{}');
+    if (saved['f-name']) {
+      const firstName = saved['f-name'].split(' ')[0];
+
+      // 1. Show welcome-back banner at top of step 0
+      const banner = document.createElement('div');
+      banner.id = 'returning-banner';
+      banner.style.cssText = 'background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.84rem;color:#166534;font-weight:500;display:flex;align-items:center;gap:8px';
+      banner.innerHTML = `<span style="font-size:1.2rem">👋</span><span>Welcome back, <strong>${firstName}</strong>! Your info is saved — just verify it on the review screen.</span>`;
+      const step0 = document.getElementById('step-0');
+      if (step0) step0.insertBefore(banner, step0.firstChild);
+
+      // 2. Auto-select "Returning Guest" chip and set selectedSource
+      selectedSource = 'Returning Guest';
+      document.getElementById('src-error').style.display = 'none';
+      const retChip = document.getElementById('src-returning');
+      if (retChip) {
+        document.querySelectorAll('.source-chip').forEach(c => c.classList.remove('selected'));
+        retChip.classList.add('selected');
+      }
+      const retLabel = document.getElementById('src-returning-label');
+      if (retLabel) retLabel.textContent = `Returning — ${firstName}`;
+
+      // 3. Pre-fill the lookup input with their saved phone or email
+      //    so they can confirm or just tap Continue without retyping
+      const lookupInp = document.getElementById('lookup-input');
+      const lookupBtn = document.querySelector('.btn-lookup');
+      if (lookupInp) {
+        const prefillVal = saved['f-phone'] || saved['f-email'] || '';
+        lookupInp.value = prefillVal;
+        if (lookupBtn && prefillVal) lookupBtn.disabled = false;
+      }
+    }
+  } catch(_) {}
+});
+</script>
+<script>
+(function() {
+  var token = window.__hopperToken;
+  if (!token || token === '__HOPPER_TOKEN__') return;
+
+  function prefillField(id, val) {
+    if (!val) return;
+    var el = document.getElementById(id);
+    if (el && !el.value) el.value = val;
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Also try URL params as fallback
+    var params = new URLSearchParams(window.location.search);
+    prefillField('f-name', params.get('name'));
+    prefillField('f-phone', params.get('phone'));
+    prefillField('f-email', params.get('email'));
+
+    // Primary: fetch from hopper token API
+    fetch('/api/hopper-token/' + token)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error === 'Already signed') {
+          hideLoading();
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;text-align:center;padding:40px;background:#f9fafb"><div><div style="font-size:3.5rem;margin-bottom:12px">\u2705</div><h2 style="color:#059669;font-size:1.4rem;margin-bottom:8px">Waiver Already Signed!</h2><p style="color:#6B7280;line-height:1.6">Your waiver is complete.<br>Show this screen to your driver to get started!</p><p style="margin-top:24px;font-size:0.8rem;color:#9CA3AF">City Tour Guide Tampa</p></div></div>';
+          return;
+        }
+        window.__hopperRequestId = data.request_id;
+        window.__hopperGuestIndex = data.guest_index || 1;
+        window.__hopperGuestCount = data.total_guests || 1;
+        window.__hopperGuestName  = data.guest_name || null;
+
+        // If this is guest 2+, clear sticky form so Guest 1's data doesn't bleed in
+        if ((data.guest_index || 1) > 1) {
+          try { localStorage.removeItem('waiverSticky'); } catch(e) {}
+          // Clear all form fields
+          ['f-name','f-phone','f-email','f-dob','f-address','f-city','f-state','f-zip'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.value = '';
+          });
+        } else {
+          // Pre-fill with booking data for main guest only
+          prefillField('f-name', data.guest_name);
+          prefillField('f-phone', data.guest_phone);
+          prefillField('f-email', data.guest_email);
+        }
+
+        // CRITICAL: trigger pre-step or go to step 1
+        hideLoading();
+        if ((data.total_guests || 1) > 1) {
+          initPreStep(); // Show group setup screen for multi-guest
+        } else {
+          showStep(1);   // Single guest — go straight to waiver
+        }
+
+        // Show guest index badge for non-primary guests
+        if (data.guest_index && data.guest_index > 1) {
+          var h1 = document.querySelector('h1');
+          if (h1) {
+            var badge = document.createElement('p');
+            badge.style.cssText = 'text-align:center;color:#6B7280;font-size:0.88rem;margin-top:-8px;margin-bottom:12px';
+            badge.textContent = 'Guest ' + data.guest_index + ' — sign your own waiver below';
+            h1.parentNode.insertBefore(badge, h1.nextSibling);
+          }
+        }
+      })
+      .catch(function() {
+      hideLoading();
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;text-align:center;padding:40px;background:#f9fafb"><div><div style="font-size:3rem;margin-bottom:12px">⚠️</div><h2 style="color:#B91C1C;font-size:1.2rem;margin-bottom:8px">Could Not Load Waiver</h2><p style="color:#6B7280;line-height:1.6">We could not load your waiver.<br>Please refresh the page or contact City Tour Guide.</p><a href="https://citytourguide.app" style="display:inline-block;margin-top:20px;padding:12px 24px;background:#0B1D3A;color:#fff;border-radius:12px;text-decoration:none;font-weight:700">Contact Us</a></div></div>';
+    });
+  });
+})();
+
+// ─── PRE-STEP 0 LOGIC ────────────────────────────────────────────────────────
+function initPreStep() {
+  const guestCount = window.__hopperGuestCount || 1;
+  if (guestCount <= 1) {
+    // Single guest — skip pre-step entirely, go straight to step 1
+    return;
+  }
+  try {
+    // Show pre-step 0
+    var pgc = document.getElementById("pre-guest-count");
+    if (pgc) pgc.textContent = guestCount;
+    // Populate minor select options based on guest count
+    var sel = document.getElementById("minor-count-select");
+    if (sel) {
+      sel.innerHTML = "";
+      for (var i = 0; i < guestCount; i++) {
+        var opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = i === 0 ? ("0 — No minors") : (i === 1 ? "1 minor" : i + " minors");
+        sel.appendChild(opt);
+      }
+      sel.addEventListener("change", updateAdultSection);
+    }
+    var smsSel     = document.getElementById("method-sms");
+    var handoffSel = document.getElementById("method-handoff");
+    if (smsSel)     smsSel.addEventListener("change", updateSmsSection);
+    if (handoffSel) handoffSel.addEventListener("change", updateSmsSection);
+    if (typeof updateAdultSection === "function") updateAdultSection();
+  } catch(_preErr) {
+    console.error("[initPreStep] setup error (non-fatal):", _preErr);
+  } finally {
+    currentStep = 0;
+    showStep(0); // Always runs — page never stays blank for multi-guest
+  }
+}
+
+function updateAdultSection() {
+  const guestCount = window.__hopperGuestCount || 1;
+  const minors = parseInt(document.getElementById("minor-count-select").value) || 0;
+  const otherAdults = guestCount - 1 - minors; // exclude guest 1
+
+  const note = document.getElementById("minor-note");
+  note.style.display = minors > 0 ? "block" : "none";
+
+  const adultSection = document.getElementById("adult-links-section");
+  if (otherAdults > 0) {
+    adultSection.style.display = "block";
+    document.getElementById("adult-count-label").textContent =
+      otherAdults === 1 ? "1 other adult" : otherAdults + " other adults";
+    updateSmsSection();
+  } else {
+    adultSection.style.display = "none";
+  }
+  // Store values
+  window._preStep = { minors, otherAdults, guestCount };
+}
+
+function updateSmsSection() {
+  const method = document.querySelector("input[name=signing-method]:checked")?.value || "handoff";
+  const smsSection = document.getElementById("sms-phones-section");
+  const phoneFields = document.getElementById("sms-phone-fields");
+  if (method === "sms") {
+    const otherAdults = (window._preStep || {}).otherAdults || 0;
+    smsSection.style.display = "block";
+    phoneFields.innerHTML = "";
+    for (let i = 0; i < otherAdults; i++) {
+      const div = document.createElement("div");
+      div.style.marginBottom = "10px";
+      div.innerHTML = '<label style="font-size:0.82rem;font-weight:600;color:#0B1D3A;display:block;margin-bottom:4px">Guest ' + (i + 2) + ' phone</label>' +
+        '<input type="tel" id="adult-phone-' + i + '" placeholder="+1 (813) 555-0000" style="width:100%;padding:12px;border:2px solid #CBD5E1;border-radius:10px;font-size:0.95rem;box-sizing:border-box">';
+      phoneFields.appendChild(div);
+    }
+  } else {
+    smsSection.style.display = "none";
+  }
+}
+
+function confirmPreStep() {
+  const ps = window._preStep || { minors: 0, otherAdults: 0 };
+  const method = document.querySelector("input[name=signing-method]:checked")?.value || "handoff";
+  // Collect phone numbers if SMS method
+  const phones = [];
+  if (method === "sms") {
+    for (let i = 0; i < ps.otherAdults; i++) {
+      const ph = document.getElementById("adult-phone-" + i)?.value?.trim();
+      if (ph) phones.push(ph);
+    }
+  }
+  // Store for use in submit
+  window._signingMethod = method;
+  window._adultPhones   = phones;
+  window._minorCount    = ps.minors;
+  // Auto-select waiver type
+  if (ps.minors > 0) {
+    waiverType = "adult_with_minors";
+  } else {
+    waiverType = "adult_only";
+  }
+  // Proceed to step 1
+  currentStep = 1;
+  showStep(1);
+}
+</script>
+</body>
+</html>
