@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useCallback } from 'react';
 import DriverChat from '../components/DriverChat';
 
@@ -40,12 +40,12 @@ function CTGLogo() {
 }
 
 const STATUS_COLOR = {
-  pending:     { bg:'#FEF3C7', border:'#F59E0B', text:'#92400E', label:'â³ Pending' },
-  confirmed:   { bg:'#D1FAE5', border:'#059669', text:'#065F46', label:'âœ… Confirmed' },
-  ride_active: { bg:'#DBEAFE', border:'#2563EB', text:'#1E3A8A', label:'ðŸ›º Experience Active' },
-  completed:   { bg:'#F3F4F6', border:'#9CA3AF', text:'#374151', label:'ðŸ Completed' },
-  declined:    { bg:'#FEE2E2', border:'#EF4444', text:'#991B1B', label:'âŒ Declined' },
-  canceled:    { bg:'#F3F4F6', border:'#9CA3AF', text:'#6B7280', label:'âœ• Guest Canceled' },
+  pending:     { bg:'#FEF3C7', border:'#F59E0B', text:'#92400E', label:'⏳ Pending' },
+  confirmed:   { bg:'#D1FAE5', border:'#059669', text:'#065F46', label:'✅ Confirmed' },
+  ride_active: { bg:'#DBEAFE', border:'#2563EB', text:'#1E3A8A', label:'🛺 Experience Active' },
+  completed:   { bg:'#F3F4F6', border:'#9CA3AF', text:'#374151', label:'🏁 Completed' },
+  declined:    { bg:'#FEE2E2', border:'#EF4444', text:'#991B1B', label:'❌ Declined' },
+  canceled:    { bg:'#F3F4F6', border:'#9CA3AF', text:'#6B7280', label:'✕ Guest Canceled' },
 };
 
 function timeAgo(ts) {
@@ -82,8 +82,8 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
           <div>
             <div style={{fontWeight:800,fontSize:'0.95rem',color:'#0B1D3A'}}>{req.guest_name}</div>
             <div style={{fontSize:'0.75rem',color:'#6B7280',marginTop:2}}>
-              {req.guest_phone} Â· {req.adults != null
-                ? `${req.adults} adult${req.adults!==1?'s':''} Â· ${req.children||0} child${(req.children||0)!==1?'ren':''} Â· ${req.guest_count} total`
+              {req.guest_phone} · {req.adults != null
+                ? `${req.adults} adult${req.adults!==1?'s':''} · ${req.children||0} child${(req.children||0)!==1?'ren':''} · ${req.guest_count} total`
                 : `${req.guest_count} guest${req.guest_count!==1?'s':''}`}
             </div>
           </div>
@@ -96,11 +96,11 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
         <div style={{display:'flex',gap:8,marginBottom:10}}>
           <div style={{flex:1,background:'#F0FDF4',borderRadius:10,padding:'8px 10px'}}>
             <div style={{fontSize:'0.62rem',fontWeight:700,color:'#16A34A',letterSpacing:'0.06em',marginBottom:2}}>HOP ON</div>
-            <div style={{fontSize:'0.8rem',fontWeight:600,color:'#111827'}}>{req.pickup_notes || req.neighborhood || 'â€”'}</div>
+            <div style={{fontSize:'0.8rem',fontWeight:600,color:'#111827'}}>{req.pickup_notes || req.neighborhood || '—'}</div>
           </div>
           <div style={{flex:1,background:'#FEF2F2',borderRadius:10,padding:'8px 10px'}}>
             <div style={{fontSize:'0.62rem',fontWeight:700,color:'#EF4444',letterSpacing:'0.06em',marginBottom:2}}>HOP OFF</div>
-            <div style={{fontSize:'0.8rem',fontWeight:600,color:'#111827'}}>{req.dropoff_notes || 'â€”'}</div>
+            <div style={{fontSize:'0.8rem',fontWeight:600,color:'#111827'}}>{req.dropoff_notes || '—'}</div>
           </div>
         </div>
 
@@ -125,8 +125,8 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
                 background:allCovered?'#D1FAE5':'#FEF3C7'}}>
                 <span style={{fontSize:'0.72rem',fontWeight:700,color:allCovered?'#065F46':'#92400E'}}>
                   {allCovered
-                    ? `âœ… All ${guestCount} guest${guestCount!==1?'s':''} covered`
-                    : `ðŸ“ ${coveredCount} of ${guestCount} guests covered`}
+                    ? `✅ All ${guestCount} guest${guestCount!==1?'s':''} covered`
+                    : `📝 ${coveredCount} of ${guestCount} guests covered`}
                 </span>
               </div>
             );
@@ -138,11 +138,11 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
         <div style={{display:'flex',gap:8,width:'100%'}}>
           <button onClick={() => viewWaivers && viewWaivers(req.id)}
             style={{flex:1,padding:'9px',borderRadius:12,border:'1.5px solid #E5E7EB',cursor:'pointer',background:'#F9FAFB',color:'#374151',fontWeight:700,fontSize:'0.82rem',fontFamily:'Inter,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-            ðŸ“‹ View Waivers
+            📋 View Waivers
           </button>
           <a href={`/request/${req.id}`} target="_blank" rel="noreferrer"
             style={{flex:1,padding:'9px',borderRadius:12,border:'1.5px solid #E5E7EB',background:'#F9FAFB',color:'#374151',fontWeight:700,fontSize:'0.82rem',fontFamily:'Inter,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:6,textDecoration:'none'}}>
-            ðŸ‘ Rider Page
+            👁 Rider Page
           </a>
           {req.guest_phone && (() => {
             const smsState = smsSending[req.id];
@@ -160,7 +160,7 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
                       display:'flex',alignItems:'center',justifyContent:'center',gap:5,
                       cursor: smsState==='sending' ? 'not-allowed' : 'pointer',
                       opacity: smsState==='sending' ? 0.7 : 1}}>
-                    {smsState==='sending' ? 'â³ Sendingâ€¦' : smsState==='sent' ? 'âœ… Sent' : 'ðŸ“¨ 833-813-8687'}
+                    {smsState==='sending' ? '⏳ Sending…' : smsState==='sent' ? '✅ Sent' : '📨 833-813-8687'}
                   </button>
                 </div>
                 {/* Error notice: only shown if GHL SMS failed */}
@@ -168,7 +168,7 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
                   <div style={{background:'#FEF3C7',border:'1px solid #F59E0B',borderRadius:8,
                     padding:'7px 10px',fontSize:'0.72rem',color:'#92400E',fontWeight:600,
                     lineHeight:1.4}}>
-                    âš ï¸ {smsErr}
+                    ⚠️ {smsErr}
                   </div>
                 )}
               </div>
@@ -179,7 +179,7 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
           <>
             <button onClick={() => onAction(req.id,'confirmed')} disabled={loading===req.id}
               style={{flex:2,padding:'11px',borderRadius:12,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#059669,#10B981)',color:'#fff',fontWeight:800,fontSize:'0.88rem',fontFamily:'Inter,sans-serif'}}>
-              {loading===req.id ? '...' : 'âœ… Accept'}
+              {loading===req.id ? '...' : '✅ Accept'}
             </button>
             <button onClick={() => onAction(req.id,'declined')} disabled={loading===req.id}
               style={{flex:1,padding:'11px',borderRadius:12,border:'1.5px solid #FCA5A5',cursor:'pointer',background:'#FEF2F2',color:'#DC2626',fontWeight:700,fontSize:'0.88rem',fontFamily:'Inter,sans-serif'}}>
@@ -195,10 +195,10 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
               {allSigned2
                 ? <button onClick={() => onAction(req.id,'confirmed')} disabled={loading===req.id}
                     style={{flex:2,padding:'11px',borderRadius:12,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#059669,#10B981)',color:'#fff',fontWeight:800,fontSize:'0.88rem',fontFamily:'Inter,sans-serif',opacity:loading===req.id?0.7:1}}>
-                    {loading===req.id ? '...' : 'âœ… Accept'}
+                    {loading===req.id ? '...' : '✅ Accept'}
                   </button>
                 : <div style={{flex:2,padding:'11px',borderRadius:12,background:'#FFFBEB',border:'1.5px solid #FDE68A',fontSize:'0.8rem',color:'#92400E',fontFamily:'Inter,sans-serif',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    â³ Awaiting guest signatures
+                    ⏳ Awaiting guest signatures
                   </div>
               }
               <button onClick={() => onAction(req.id,'declined')} disabled={loading===req.id}
@@ -212,7 +212,7 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
           <>
             <button onClick={() => onAction(req.id,'confirmed')} disabled={loading===req.id}
               style={{flex:2,padding:'11px',borderRadius:12,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#059669,#10B981)',color:'#fff',fontWeight:800,fontSize:'0.88rem',fontFamily:'Inter,sans-serif',opacity:loading===req.id?0.7:1}}>
-              {loading===req.id ? '...' : 'âœ… Accept'}
+              {loading===req.id ? '...' : '✅ Accept'}
             </button>
             <button onClick={() => onAction(req.id,'declined')} disabled={loading===req.id}
               style={{flex:1,padding:'11px',borderRadius:12,border:'1.5px solid #FCA5A5',cursor:'pointer',background:'#FEF2F2',color:'#DC2626',fontWeight:700,fontSize:'0.88rem',fontFamily:'Inter,sans-serif'}}>
@@ -226,7 +226,7 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
               background:'linear-gradient(135deg,#0B1D3A,#1E3A5F)',color:'#fff',fontWeight:800,fontSize:'0.88rem',
               fontFamily:'Inter,sans-serif',textAlign:'center',textDecoration:'none',
               alignItems:'center',justifyContent:'center',gap:8}}>
-            ðŸ—ºï¸ Navigate to Pickup
+            🗺️ Navigate to Pickup
           </a>
         )}
         {req.status === 'ride_active' && dropoffUrl && (
@@ -235,46 +235,46 @@ function RequestCard({ req, onAction, loading, viewWaivers, smsSending, smsError
               background:'linear-gradient(135deg,#7C3AED,#9333EA)',color:'#fff',fontWeight:800,fontSize:'0.88rem',
               fontFamily:'Inter,sans-serif',textAlign:'center',textDecoration:'none',
               alignItems:'center',justifyContent:'center',gap:8}}>
-            ðŸ—ºï¸ Navigate to Drop-off
+            🗺️ Navigate to Drop-off
           </a>
         )}
         {req.status==='confirmed' && (
           <button onClick={() => onAction(req.id,'pickup_started')} disabled={loading===req.id}
             style={{flex:1,padding:'11px',borderRadius:12,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#0057E7,#0095FF)',color:'#fff',fontWeight:800,fontSize:'0.88rem',fontFamily:'Inter,sans-serif',opacity:loading===req.id?0.7:1}}>
-            {loading===req.id ? 'ðŸš— Startingâ€¦' : 'ðŸš— Start Pickup'}
+            {loading===req.id ? '🚗 Starting…' : '🚗 Start Pickup'}
           </button>
         )}
         {req.status==='pickup_started' && (
           <button onClick={() => onAction(req.id,'driver_arrived')} disabled={loading===req.id}
             style={{flex:1,padding:'11px',borderRadius:12,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#F59E0B,#FBBF24)',color:'#fff',fontWeight:800,fontSize:'0.88rem',fontFamily:'Inter,sans-serif',opacity:loading===req.id?0.7:1}}>
-            {loading===req.id ? 'ðŸ“ Arrivingâ€¦' : 'ðŸ“ Arrived'}
+            {loading===req.id ? '📍 Arriving…' : '📍 Arrived'}
           </button>
         )}
         {req.status==='driver_arrived' && (
           <button onClick={() => onAction(req.id,'ride_active')} disabled={loading===req.id}
             style={{flex:1,padding:'11px',borderRadius:12,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#059669,#10B981)',color:'#fff',fontWeight:800,fontSize:'0.88rem',fontFamily:'Inter,sans-serif',opacity:loading===req.id?0.7:1}}>
-            {loading===req.id ? 'ðŸš€ Startingâ€¦' : 'ðŸš€ Start Ride'}
+            {loading===req.id ? '🚀 Starting…' : '🚀 Start Ride'}
           </button>
         )}
         {req.status==='ride_active' && (
           <button onClick={() => onAction(req.id,'completed')} disabled={loading===req.id}
             style={{flex:1,padding:'11px',borderRadius:12,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#0B1D3A,#1E3A5F)',color:'#fff',fontWeight:800,fontSize:'0.88rem',fontFamily:'Inter,sans-serif',opacity:loading===req.id?0.7:1}}>
-            {loading===req.id ? 'âœ… Completingâ€¦' : 'ðŸ Complete Ride'}
+            {loading===req.id ? '✅ Completing…' : '🏁 Complete Ride'}
           </button>
         )}
         {req.status==='completed' && (
           <div style={{flex:1,padding:'10px',borderRadius:10,background:'#F0FDF4',textAlign:'center',fontSize:'0.82rem',fontWeight:700,color:'#059669'}}>
-            âœ… Experience Complete
+            ✅ Experience Complete
           </div>
         )}
         {req.status==='declined' && (
           <div style={{flex:1,padding:'10px',borderRadius:10,background:'#FEF2F2',textAlign:'center',fontSize:'0.82rem',fontWeight:700,color:'#DC2626'}}>
-            âŒ Declined
+            ❌ Declined
           </div>
         )}
         {req.status==='canceled' && (
           <div style={{flex:1,padding:'10px',borderRadius:10,background:'#F3F4F6',textAlign:'center',fontSize:'0.82rem',fontWeight:700,color:'#6B7280'}}>
-            âœ• Guest Canceled
+            ✕ Guest Canceled
           </div>
         )}
         <DriverChat
@@ -305,7 +305,7 @@ export default function DriverDashboard() {
   const [smsSending, setSmsSending] = useState({});
   // Wave I: business SMS error state ({ [reqId]: string | null })
   const [smsError, setSmsError]     = useState({});
-  // sendingSms removed in Wave F â€” SMS is now a direct sms: href link
+  // sendingSms removed in Wave F — SMS is now a direct sms: href link
   // Wave E: On Duty / Off Duty
   const [onDuty, setOnDuty]         = useState(false);
   const [dutyLoading, setDutyLoading] = useState(false);
@@ -322,7 +322,7 @@ export default function DriverDashboard() {
     setRefreshing(false);
   }, []);
 
-  // Auto-clear stale service workers â€” prevents CDN-cached chunk mismatches
+  // Auto-clear stale service workers — prevents CDN-cached chunk mismatches
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => {
@@ -424,8 +424,8 @@ export default function DriverDashboard() {
     setWaiverLoading(false);
   };
 
-  // textGuest server-side SMS removed in Wave F â€” replaced with sms: href in RequestCard
-  // Wave I: sendBusinessSms â€” sends via GHL from 833.813.8687
+  // textGuest server-side SMS removed in Wave F — replaced with sms: href in RequestCard
+  // Wave I: sendBusinessSms — sends via GHL from 833.813.8687
   async function sendBusinessSms(req) {
     setSmsSending(s => ({ ...s, [req.id]: 'sending' }));
     setSmsError(e => ({ ...e, [req.id]: null }));
@@ -489,8 +489,8 @@ export default function DriverDashboard() {
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:1000,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'20px',overflowY:'auto'}} onClick={() => setWaiverModal(null)}>
       <div style={{background:'#fff',borderRadius:20,width:'100%',maxWidth:480,padding:24,marginTop:20}} onClick={e => e.stopPropagation()}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-          <h2 style={{margin:0,fontSize:'1.1rem',fontWeight:800,color:'#0B1D3A'}}>ðŸ“‹ Signed Waivers</h2>
-          <button onClick={() => setWaiverModal(null)} style={{background:'none',border:'none',fontSize:'1.4rem',cursor:'pointer',color:'#9CA3AF'}}>âœ•</button>
+          <h2 style={{margin:0,fontSize:'1.1rem',fontWeight:800,color:'#0B1D3A'}}>📋 Signed Waivers</h2>
+          <button onClick={() => setWaiverModal(null)} style={{background:'none',border:'none',fontSize:'1.4rem',cursor:'pointer',color:'#9CA3AF'}}>✕</button>
         </div>
         {waiverLoading && <p style={{textAlign:'center',color:'#9CA3AF'}}>Loading...</p>}
         {!waiverLoading && waiverModal.waivers.length === 0 && (
@@ -506,10 +506,10 @@ export default function DriverDashboard() {
               <div style={{textAlign:'right'}}>
                 {w.signed_at ? (
                   <div style={{background:'#D1FAE5',color:'#065F46',fontWeight:700,fontSize:'0.72rem',padding:'3px 10px',borderRadius:20}}>
-                    âœ… Signed {new Date(w.signed_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+                    ✅ Signed {new Date(w.signed_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
                   </div>
                 ) : (
-                  <div style={{background:'#FEF3C7',color:'#92400E',fontWeight:700,fontSize:'0.72rem',padding:'3px 10px',borderRadius:20}}>â³ Pending</div>
+                  <div style={{background:'#FEF3C7',color:'#92400E',fontWeight:700,fontSize:'0.72rem',padding:'3px 10px',borderRadius:20}}>⏳ Pending</div>
                 )}
               </div>
             </div>
@@ -527,7 +527,7 @@ export default function DriverDashboard() {
                     color:'#1D4ED8',fontSize:'0.75rem',fontWeight:700,textAlign:'center',
                     border:'1px solid #BFDBFE',fontFamily:'Inter,sans-serif',cursor:'pointer',
                     opacity:downloadingDriverWaiver===w.id?0.7:1}}>
-                  {downloadingDriverWaiver === w.id ? 'â³ Preparing PDFâ€¦' : 'ðŸ“„ Download Signed Waiver'}
+                  {downloadingDriverWaiver === w.id ? '⏳ Preparing PDF…' : '📄 Download Signed Waiver'}
                 </button>
               </>
             )}
@@ -543,7 +543,7 @@ export default function DriverDashboard() {
         <div style={{textAlign:'center',marginBottom:24}}>
           <CTGLogo/>
           <div style={{fontWeight:900,fontSize:'1.1rem',color:'#0B1D3A',marginTop:16}}>Driver Dashboard</div>
-          <div style={{fontSize:'0.78rem',color:'#6B7280',marginTop:4}}>City Hopper Â· Tampa</div>
+          <div style={{fontSize:'0.78rem',color:'#6B7280',marginTop:4}}>City Hopper · Tampa</div>
         </div>
         <form onSubmit={doLogin} style={{display:'flex',flexDirection:'column',gap:12}}>
           <input type="password" value={pin} onChange={e=>{setPin(e.target.value);setPinError('');}}
@@ -578,12 +578,12 @@ export default function DriverDashboard() {
         )}
         <button onClick={() => load(false)} disabled={refreshing}
           style={{background:'rgba(255,255,255,0.1)',border:'none',color:'#fff',borderRadius:8,padding:'6px 10px',cursor:'pointer',fontSize:'0.75rem',fontFamily:'Inter,sans-serif'}}>
-          {refreshing ? '...' : 'â†»'}
+          {refreshing ? '...' : '↻'}
         </button>
       </div>
 
       
-{/* â”€â”€ Driver Info Card â”€â”€ */}
+{/* ── Driver Info Card ── */}
 <div style={{background:'#fff',borderBottom:'1px solid #E5E7EB',padding:'12px 16px',display:'flex',alignItems:'center',gap:12}}>
   <img
     src="/driver-profile.png"
@@ -595,14 +595,14 @@ export default function DriverDashboard() {
   />
   <div style={{flex:1,minWidth:0}}>
     <div style={{fontWeight:800,fontSize:'0.95rem',color:'#111827',lineHeight:1.2}}>{DRIVER_NAME}</div>
-    <div style={{fontSize:'0.72rem',color:'#6B7280',marginTop:2,lineHeight:1.3}}>Ford Transit Connect 6pp Â· Navy Blue Passenger Van</div>
+    <div style={{fontSize:'0.72rem',color:'#6B7280',marginTop:2,lineHeight:1.3}}>Ford Transit Connect 6pp · Navy Blue Passenger Van</div>
   </div>
   <div style={{background:'#0B1D3A',color:'#00FF88',border:'1.5px solid #00FF88',borderRadius:8,fontWeight:900,fontSize:'0.72rem',fontFamily:'monospace',padding:'4px 10px',flexShrink:0,letterSpacing:'0.08em'}}>
     {DRIVER_PLATE}
   </div>
 </div>
 
-{/* â”€â”€ On Duty / Off Duty toggle banner â”€â”€ */}
+{/* ── On Duty / Off Duty toggle banner ── */}
       <div style={{background: onDuty ? '#D1FAE5' : '#FEF3C7',
         borderBottom: '1px solid ' + (onDuty ? '#10B981' : '#F59E0B'),
         padding: '10px 16px', display: 'flex', alignItems: 'center',
@@ -627,11 +627,11 @@ export default function DriverDashboard() {
             color:'#fff', fontWeight:800, fontSize:'0.82rem',
             fontFamily:'Inter,sans-serif', flexShrink:0,
             opacity: dutyLoading ? 0.7 : 1}}>
-          {dutyLoading ? 'â€¦' : onDuty ? 'Go Off Duty' : 'Go On Duty'}
+          {dutyLoading ? '…' : onDuty ? 'Go Off Duty' : 'Go On Duty'}
         </button>
       </div>
 
-      {/* â”€â”€ Sticky tab bar â€” stays below header while cards scroll â”€â”€ */}
+      {/* ── Sticky tab bar — stays below header while cards scroll ── */}
       <div style={{position:'sticky',top:54,zIndex:99,background:'#F9FAFB',padding:'10px 16px 6px',borderBottom:'1px solid #E5E7EB'}}>
         <div style={{display:'flex',background:'#E5E7EB',borderRadius:12,padding:3,maxWidth:560,margin:'0 auto'}}>
           {[['requests','Requests'],['active','Active'],['completed','Done']].map(([v,l]) => (
@@ -649,7 +649,7 @@ export default function DriverDashboard() {
 
         {shown.length === 0 && (
           <div style={{textAlign:'center',padding:'48px 20px',color:'#9CA3AF'}}>
-            <div style={{fontSize:'2.5rem',marginBottom:12}}>ðŸ›º</div>
+            <div style={{fontSize:'2.5rem',marginBottom:12}}>🛺</div>
             <div style={{fontWeight:600,fontSize:'0.9rem'}}>
               {filter==='requests'?'No pending requests':filter==='active'?'No active experiences right now':filter==='completed'?'No completed experiences in the last 30 days':'No experiences'}
             </div>
