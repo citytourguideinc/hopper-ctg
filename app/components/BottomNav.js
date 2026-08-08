@@ -58,7 +58,7 @@ const MORE_ITEMS = [
     id: 'info',
     label: 'CityINFO',
     sub: 'About, location & contact',
-    href: 'https://citytourguide.stqry.app/3',
+    href: '/city-info',
     color: '#0066FF',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -195,3 +195,4 @@ export default function BottomNav({ active = 'hopper' }) {
     </>
   );
 }
+
