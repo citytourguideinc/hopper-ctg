@@ -1,11 +1,11 @@
-﻿'use client';
+'use client';
 import { useState } from 'react';
 
 const NAV_ITEMS = [
   {
-    id: 'home',
+    id: 'guide',
     label: 'cityGUIDE',
-    href: 'https://citytourguide.app/?home=1',
+    href: 'https://staging.citytourguide.app/guide',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   {
     id: 'tours',
     label: 'cityTOURS',
-    href: 'https://tours.citytourguide.app',
+    href: 'https://staging.citytourguide.app/tours',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="10" r="4"/>
@@ -26,22 +26,24 @@ const NAV_ITEMS = [
     ),
   },
   {
-    id: 'hopper',
-    label: 'cityFUNHOP',
-    href: 'https://hopper.citytourguide.app',
+    id: 'transit',
+    label: 'cityTRANSIT',
+    href: 'https://staging.citytourguide.app/transit',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="1" y="13" width="22" height="6" rx="3"/>
-        <path d="M5 13V9a4 4 0 014-4h6a4 4 0 014 4v4"/>
-        <circle cx="7" cy="19" r="2"/>
-        <circle cx="17" cy="19" r="2"/>
+        <rect x="5" y="3" width="14" height="16" rx="3"/>
+        <line x1="8" y1="7" x2="16" y2="7"/>
+        <circle cx="9" cy="15" r="1"/>
+        <circle cx="15" cy="15" r="1"/>
+        <line x1="8" y1="21" x2="10" y2="19"/>
+        <line x1="16" y1="21" x2="14" y2="19"/>
       </svg>
     ),
   },
   {
-    id: 'social',
-    label: 'citySOCIAL',
-    href: 'https://social.citytourguide.app',
+    id: 'experiences',
+    label: 'cityEXPERIENCES',
+    href: 'https://staging.citytourguide.app/social',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -55,10 +57,25 @@ const NAV_ITEMS = [
 
 const MORE_ITEMS = [
   {
+    id: 'merchant-membership',
+    label: 'Merchant Membership',
+    sub: 'Coming soon • Grow your business with CTG',
+    href: '#',
+    color: '#2F9BFF',
+    comingSoon: true,
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l1.5-5h15L21 9"/>
+        <path d="M5 9v10h14V9"/>
+        <path d="M9 19v-6h6v6"/>
+      </svg>
+    ),
+  },
+  {
     id: 'info',
     label: 'CityINFO',
     sub: 'About, location & contact',
-    href: '/city-info',
+    href: 'https://staging.citytourguide.app/city-info',
     color: '#0066FF',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,9 +87,9 @@ const MORE_ITEMS = [
   },
   {
     id: 'faq',
-    label: 'F.A.Q.s',
+    label: 'CityFAQ',
     sub: 'Frequently asked questions',
-    href: 'https://citytourguide.app/faq',
+    href: 'https://staging.citytourguide.app/city-faq',
     color: '#00C896',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -84,9 +101,9 @@ const MORE_ITEMS = [
   },
   {
     id: 'legal',
-    label: 'Policies & Legal',
+    label: 'CityLEGAL',
     sub: 'Privacy, terms & disclaimer',
-    href: 'https://citytourguide.app/legal',
+    href: 'https://staging.citytourguide.app/city-legal',
     color: '#F59E0B',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -96,64 +113,24 @@ const MORE_ITEMS = [
   },
 ];
 
-export default function BottomNav({ active = 'hopper' }) {
+export default function BottomNav({ active = 'transit' }) {
   const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <>
-      {/* City+ sheet overlay */}
       {moreOpen && (
-        <div
-          onClick={() => setMoreOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 400,
-            background: 'rgba(0,0,0,0.55)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: '#111', borderRadius: '20px 20px 0 0',
-              padding: '12px 0 32px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderBottom: 'none',
-            }}
-          >
-            {/* Handle bar */}
-            <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 99, margin: '0 auto 16px' }}/>
-            <div style={{ padding: '0 20px 12px', fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              City+
-            </div>
+        <div onClick={() => setMoreOpen(false)} style={{position:'fixed',inset:0,zIndex:400,background:'rgba(0,0,0,0.55)',display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
+          <div onClick={e => e.stopPropagation()} style={{background:'#111',borderRadius:'20px 20px 0 0',padding:'12px 0 32px',border:'1px solid rgba(255,255,255,0.1)',borderBottom:'none'}}>
+            <div style={{width:36,height:4,background:'rgba(255,255,255,0.2)',borderRadius:99,margin:'0 auto 16px'}}/>
+            <div style={{padding:'0 20px 12px',fontSize:'0.65rem',fontWeight:800,color:'rgba(255,255,255,0.35)',letterSpacing:'0.12em',textTransform:'uppercase'}}>City+</div>
             {MORE_ITEMS.map(item => (
-              <a
-                key={item.id}
-                href={item.href}
-                onClick={() => setMoreOpen(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  padding: '14px 20px',
-                  textDecoration: 'none',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                }}
-              >
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12,
-                  background: `${item.color}18`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: item.color, flexShrink: 0,
-                }}>
-                  {item.icon}
-                </div>
+              <a key={item.id} href={item.href} onClick={(e) => { if (item.comingSoon) e.preventDefault(); else setMoreOpen(false); }} aria-disabled={item.comingSoon || undefined} style={{display:'flex',alignItems:'center',gap:16,padding:'14px 20px',textDecoration:'none',borderBottom:'1px solid rgba(255,255,255,0.06)',opacity:item.comingSoon?0.9:1,cursor:item.comingSoon?'default':'pointer'}}>
+                <div style={{width:44,height:44,borderRadius:12,background:`${item.color}18`,display:'flex',alignItems:'center',justifyContent:'center',color:item.color,flexShrink:0}}>{item.icon}</div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff', lineHeight: 1.2 }}>{item.label}</div>
-                  <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{item.sub}</div>
+                  <div style={{fontWeight:800,fontSize:'0.95rem',color:'#fff',lineHeight:1.2}}>{item.label}</div>
+                  <div style={{fontSize:'0.72rem',color:'rgba(255,255,255,0.45)',marginTop:2}}>{item.sub}</div>
                 </div>
-                <div style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.25)' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6"/>
-                  </svg>
-                </div>
+                {item.comingSoon ? <span style={{marginLeft:'auto',fontSize:'0.58rem',fontWeight:900,letterSpacing:'0.08em',color:item.color,border:`1px solid ${item.color}66`,borderRadius:999,padding:'4px 7px'}}>SOON</span> : <div style={{marginLeft:'auto',color:'rgba(255,255,255,0.25)'}}>›</div>}
               </a>
             ))}
           </div>
@@ -162,31 +139,14 @@ export default function BottomNav({ active = 'hopper' }) {
 
       <nav className="ctg-bottom-nav" aria-label="City Tour Guide navigation">
         {NAV_ITEMS.map((item) => (
-          <a
-            key={item.id}
-            href={item.href}
-            target={item.target || undefined}
-            rel={item.target ? 'noopener noreferrer' : undefined}
-            className={`ctg-bottom-nav-item${item.id === active ? ' ctg-bottom-nav-item--active' : ''}`}
-            aria-current={item.id === active ? 'page' : undefined}
-          >
+          <a key={item.id} href={item.href} className={`ctg-bottom-nav-item${item.id === active ? ' ctg-bottom-nav-item--active' : ''}`} aria-current={item.id === active ? 'page' : undefined}>
             <span className="ctg-bottom-nav-icon">{item.icon}</span>
             <span className="ctg-bottom-nav-label">{item.label}</span>
           </a>
         ))}
-
-        {/* City+ more button */}
-        <button
-          onClick={() => setMoreOpen(o => !o)}
-          className={`ctg-bottom-nav-item${moreOpen ? ' ctg-bottom-nav-item--active' : ''}`}
-          aria-label="More options"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
-        >
+        <button onClick={() => setMoreOpen(o => !o)} className={`ctg-bottom-nav-item${moreOpen ? ' ctg-bottom-nav-item--active' : ''}`} aria-label="More options" style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:0}}>
           <span className="ctg-bottom-nav-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </span>
           <span className="ctg-bottom-nav-label">city+</span>
         </button>
@@ -195,4 +155,3 @@ export default function BottomNav({ active = 'hopper' }) {
     </>
   );
 }
-
