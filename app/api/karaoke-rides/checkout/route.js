@@ -1,1 +1,2 @@
-export { dynamic, POST } from '../../hopper/checkout/route';
+export const dynamic = 'force-dynamic';
+export { POST } from '../../hopper/checkout/route';
