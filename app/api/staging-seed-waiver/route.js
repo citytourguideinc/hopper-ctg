@@ -1,26 +1,36 @@
 export const dynamic = "force-dynamic";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const TEST_TOKEN = "test-token";
+const TEST_ALIAS = "test-token";
+const TEST_UUID = "00000000-0000-4000-8000-000000000001";
 
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    if (body.token !== TEST_TOKEN) {
+    if (body.token !== TEST_ALIAS && body.token !== TEST_UUID) {
       return Response.json({ error: "Not allowed" }, { status: 403 });
     }
 
-    const { data: existing } = await supabaseAdmin
+    const { data: existing, error: existingError } = await supabaseAdmin
       .from("hopper_waivers")
       .select("id, token, request_id, signed_at")
-      .eq("token", TEST_TOKEN)
+      .eq("token", TEST_UUID)
       .maybeSingle();
+
+    if (existingError) {
+      console.error("[staging-seed-waiver] lookup failed", existingError.message);
+      return Response.json({ error: existingError.message }, { status: 500 });
+    }
 
     if (existing) {
       if (existing.signed_at) {
-        await supabaseAdmin.from("hopper_waivers").update({ signed_at: null, signature_data: null }).eq("id", existing.id);
+        const { error: resetError } = await supabaseAdmin
+          .from("hopper_waivers")
+          .update({ signed_at: null, signature_data: null })
+          .eq("id", existing.id);
+        if (resetError) return Response.json({ error: resetError.message }, { status: 500 });
       }
-      return Response.json({ success: true, token: TEST_TOKEN, request_id: existing.request_id, reused: true });
+      return Response.json({ success: true, token: TEST_UUID, request_id: existing.request_id, reused: true });
     }
 
     const rideDate = body.ride_date || new Date().toISOString().slice(0, 10);
@@ -53,7 +63,7 @@ export async function POST(req) {
       .from("hopper_waivers")
       .insert({
         request_id: requestRow.id,
-        token: TEST_TOKEN,
+        token: TEST_UUID,
         guest_index: 1,
         guest_name: body.print_name || "Staging Test",
         guest_phone: body.phone || null
@@ -67,7 +77,7 @@ export async function POST(req) {
       return Response.json({ error: waiverError?.message || "Could not create staging waiver" }, { status: 500 });
     }
 
-    return Response.json({ success: true, token: TEST_TOKEN, request_id: requestRow.id, reused: false });
+    return Response.json({ success: true, token: TEST_UUID, request_id: requestRow.id, reused: false });
   } catch (error) {
     console.error("[staging-seed-waiver]", error.message);
     return Response.json({ error: error.message }, { status: 500 });
