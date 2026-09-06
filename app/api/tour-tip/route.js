@@ -8,10 +8,9 @@ export async function POST(req) {
     const tipAmount = Number(body.tipAmount);
     const guestName = String(body.guestName || "").trim().slice(0, 100);
 
-    // Stripe requires at least $0.50 USD for a card Checkout payment.
-    // Otherwise the guest may enter any gratuity amount, including cents.
-    if (!Number.isFinite(tipAmount) || tipAmount < 0.5) {
-      return NextResponse.json({ error: "Gratuity must be at least $0.50" }, { status: 400 });
+    // Guests may enter any gratuity amount of $1.00 or more, including cents.
+    if (!Number.isFinite(tipAmount) || tipAmount < 1) {
+      return NextResponse.json({ error: "Gratuity must be at least $1.00" }, { status: 400 });
     }
 
     const secretKey = process.env.STRIPE_SECRET_KEY;
