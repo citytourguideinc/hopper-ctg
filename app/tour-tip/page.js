@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const PRESETS = [10, 20, 30, 50];
 
@@ -12,10 +12,16 @@ export default function TourTipPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tip_success") === "1") setSubmitted(true);
+  }, []);
+
   const tipAmount = useCustom ? Number(custom || 0) : selected;
+  const validAmount = Number.isFinite(tipAmount) && tipAmount >= 0.5;
 
   async function handleTip() {
-    if (submitting || !Number.isFinite(tipAmount) || tipAmount <= 0) return;
+    if (submitting || !validAmount) return;
     setSubmitting(true);
     try {
       const response = await fetch("/api/tour-tip", {
@@ -30,11 +36,6 @@ export default function TourTipPage() {
       setSubmitting(false);
       alert(error.message || "Could not process gratuity. Please try again.");
     }
-  }
-
-  if (typeof window !== "undefined" && !submitted) {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("tip_success") === "1") setTimeout(() => setSubmitted(true), 0);
   }
 
   if (submitted) {
@@ -58,8 +59,9 @@ export default function TourTipPage() {
           <h1 style={{margin:"10px 0 4px",fontSize:"1.55rem"}}>Thank Your Tour Guide</h1>
           <div style={{fontSize:".82rem",opacity:.7}}>City Tour Guide, Inc. · Tampa</div>
         </header>
+
         <div style={{background:"white",padding:22,borderRadius:"0 0 20px 20px",boxShadow:"0 10px 35px rgba(0,0,0,.08)"}}>
-          <p style={{color:"#64748B",fontSize:".9rem",lineHeight:1.6,marginTop:0}}>If you enjoyed your tour and would like to leave a gratuity, choose an amount below. Thank you for supporting your tour guide.</p>
+          <p style={{color:"#64748B",fontSize:".9rem",lineHeight:1.6,marginTop:0}}>If you enjoyed your tour and would like to leave a gratuity, choose a suggested amount or enter any amount below. Thank you for supporting your tour guide.</p>
 
           <label style={{display:"block",fontWeight:700,fontSize:".82rem",margin:"20px 0 7px"}}>Your name (optional)</label>
           <input value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="Guest name" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1.5px solid #CBD5E1",borderRadius:12,fontSize:"1rem"}} />
@@ -70,10 +72,31 @@ export default function TourTipPage() {
             ))}
           </div>
 
-          <button onClick={()=>setUseCustom(true)} style={{width:"100%",marginTop:10,padding:12,borderRadius:12,border:useCustom?"2px solid #E8431A":"1.5px solid #CBD5E1",background:useCustom?"#FFF1EE":"white",fontWeight:700,color:useCustom?"#E8431A":"#64748B",cursor:"pointer"}}>Custom Amount</button>
-          {useCustom && <input type="number" min="1" step="1" value={custom} onChange={e=>setCustom(e.target.value)} placeholder="$0.00" style={{width:"100%",boxSizing:"border-box",marginTop:10,padding:14,border:"1.5px solid #CBD5E1",borderRadius:12,fontSize:"1.1rem",textAlign:"center",fontWeight:700}} />}
+          <button onClick={()=>setUseCustom(true)} style={{width:"100%",marginTop:10,padding:12,borderRadius:12,border:useCustom?"2px solid #E8431A":"1.5px solid #CBD5E1",background:useCustom?"#FFF1EE":"white",fontWeight:700,color:useCustom?"#E8431A":"#64748B",cursor:"pointer"}}>Enter Any Amount</button>
 
-          <button onClick={handleTip} disabled={submitting || tipAmount <= 0} style={{width:"100%",marginTop:22,padding:16,border:0,borderRadius:999,background:submitting?"#CBD5E1":"linear-gradient(135deg,#E8431A,#F5A623)",color:"white",fontWeight:800,fontSize:"1rem",cursor:submitting?"not-allowed":"pointer"}}>{submitting?"Opening secure payment…":`Add $${Number(tipAmount || 0).toFixed(2)} Gratuity`}</button>
+          {useCustom && (
+            <div style={{position:"relative",marginTop:10}}>
+              <span style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",fontWeight:800,color:"#334155"}}>$</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0.50"
+                step="0.01"
+                value={custom}
+                onChange={e=>setCustom(e.target.value)}
+                placeholder="0.00"
+                autoFocus
+                style={{width:"100%",boxSizing:"border-box",padding:"14px 14px 14px 30px",border:"1.5px solid #CBD5E1",borderRadius:12,fontSize:"1.1rem",textAlign:"center",fontWeight:700}}
+              />
+            </div>
+          )}
+
+          {useCustom && custom !== "" && !validAmount && (
+            <p style={{color:"#B91C1C",fontSize:".75rem",margin:"8px 0 0"}}>Minimum gratuity is $0.50.</p>
+          )}
+
+          <button onClick={handleTip} disabled={submitting || !validAmount} style={{width:"100%",marginTop:22,padding:16,border:0,borderRadius:999,background:(submitting||!validAmount)?"#CBD5E1":"linear-gradient(135deg,#E8431A,#F5A623)",color:"white",fontWeight:800,fontSize:"1rem",cursor:(submitting||!validAmount)?"not-allowed":"pointer"}}>{submitting?"Opening secure payment…":`Add $${validAmount ? tipAmount.toFixed(2) : "0.00"} Gratuity`}</button>
+
           <p style={{textAlign:"center",color:"#94A3B8",fontSize:".72rem",margin:"14px 0 0"}}>Secure payment processed by Stripe.</p>
         </div>
       </section>
