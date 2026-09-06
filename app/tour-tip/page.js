@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+const TOUR_GUIDES = ["Michele Frasure"];
+
 export default function TourTipPage() {
   const [amount, setAmount] = useState("");
   const [guestName, setGuestName] = useState("");
+  const [tourGuide, setTourGuide] = useState("Michele Frasure");
   const [tourDateTime, setTourDateTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -18,7 +21,7 @@ export default function TourTipPage() {
   const validAmount = Number.isFinite(tipAmount) && tipAmount >= 1;
 
   async function handleTip() {
-    if (submitting || !validAmount || !tourDateTime) return;
+    if (submitting || !validAmount || !tourGuide || !tourDateTime) return;
     setSubmitting(true);
     try {
       const response = await fetch("/api/tour-tip", {
@@ -27,6 +30,7 @@ export default function TourTipPage() {
         body: JSON.stringify({
           tipAmount,
           guestName: guestName.trim(),
+          tourGuide,
           tourDateTime,
         }),
       });
@@ -67,6 +71,11 @@ export default function TourTipPage() {
           <label style={{display:"block",fontWeight:700,fontSize:".82rem",margin:"18px 0 7px"}}>Your name (optional)</label>
           <input value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="Guest name" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1.5px solid #CBD5E1",borderRadius:12,fontSize:"1rem"}} />
 
+          <label style={{display:"block",fontWeight:700,fontSize:".82rem",margin:"18px 0 7px"}}>Select your tour guide</label>
+          <select value={tourGuide} onChange={e=>setTourGuide(e.target.value)} style={{width:"100%",boxSizing:"border-box",padding:13,border:"1.5px solid #CBD5E1",borderRadius:12,fontSize:"1rem",background:"white"}}>
+            {TOUR_GUIDES.map(name => <option key={name} value={name}>{name}</option>)}
+          </select>
+
           <label style={{display:"block",fontWeight:700,fontSize:".82rem",margin:"18px 0 7px"}}>When did you take your tour?</label>
           <input type="datetime-local" value={tourDateTime} onChange={e=>setTourDateTime(e.target.value)} style={{width:"100%",boxSizing:"border-box",padding:13,border:"1.5px solid #CBD5E1",borderRadius:12,fontSize:"1rem",background:"white"}} />
 
@@ -89,7 +98,7 @@ export default function TourTipPage() {
             <p style={{color:"#B91C1C",fontSize:".75rem",margin:"8px 0 0"}}>Minimum gratuity is $1.00.</p>
           )}
 
-          <button onClick={handleTip} disabled={submitting || !validAmount || !tourDateTime} style={{width:"100%",marginTop:22,padding:16,border:0,borderRadius:999,background:(submitting||!validAmount||!tourDateTime)?"#CBD5E1":"linear-gradient(135deg,#E8431A,#F5A623)",color:"white",fontWeight:800,fontSize:"1rem",cursor:(submitting||!validAmount||!tourDateTime)?"not-allowed":"pointer"}}>{submitting?"Opening secure payment…":validAmount?`Leave $${tipAmount.toFixed(2)} Gratuity`:"Leave Gratuity"}</button>
+          <button onClick={handleTip} disabled={submitting || !validAmount || !tourGuide || !tourDateTime} style={{width:"100%",marginTop:22,padding:16,border:0,borderRadius:999,background:(submitting||!validAmount||!tourGuide||!tourDateTime)?"#CBD5E1":"linear-gradient(135deg,#E8431A,#F5A623)",color:"white",fontWeight:800,fontSize:"1rem",cursor:(submitting||!validAmount||!tourGuide||!tourDateTime)?"not-allowed":"pointer"}}>{submitting?"Opening secure payment…":validAmount?`Leave $${tipAmount.toFixed(2)} Gratuity`:"Leave Gratuity"}</button>
 
           <p style={{textAlign:"center",color:"#94A3B8",fontSize:".72rem",margin:"14px 0 0"}}>Secure payment processed by Stripe.</p>
         </div>
