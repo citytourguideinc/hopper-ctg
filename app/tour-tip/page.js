@@ -18,7 +18,7 @@ export default function TourTipPage() {
   }, []);
 
   const tipAmount = useCustom ? Number(custom || 0) : selected;
-  const validAmount = Number.isFinite(tipAmount) && tipAmount >= 0.5;
+  const validAmount = Number.isFinite(tipAmount) && tipAmount >= 1;
 
   async function handleTip() {
     if (submitting || !validAmount) return;
@@ -80,7 +80,7 @@ export default function TourTipPage() {
               <input
                 type="number"
                 inputMode="decimal"
-                min="0.50"
+                min="1"
                 step="0.01"
                 value={custom}
                 onChange={e=>setCustom(e.target.value)}
@@ -92,7 +92,7 @@ export default function TourTipPage() {
           )}
 
           {useCustom && custom !== "" && !validAmount && (
-            <p style={{color:"#B91C1C",fontSize:".75rem",margin:"8px 0 0"}}>Minimum gratuity is $0.50.</p>
+            <p style={{color:"#B91C1C",fontSize:".75rem",margin:"8px 0 0"}}>Minimum gratuity is $1.00.</p>
           )}
 
           <button onClick={handleTip} disabled={submitting || !validAmount} style={{width:"100%",marginTop:22,padding:16,border:0,borderRadius:999,background:(submitting||!validAmount)?"#CBD5E1":"linear-gradient(135deg,#E8431A,#F5A623)",color:"white",fontWeight:800,fontSize:"1rem",cursor:(submitting||!validAmount)?"not-allowed":"pointer"}}>{submitting?"Opening secure payment…":`Add $${validAmount ? tipAmount.toFixed(2) : "0.00"} Gratuity`}</button>
