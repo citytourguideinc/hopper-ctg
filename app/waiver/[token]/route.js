@@ -8,7 +8,6 @@ const STAGING_HOST = "staging-waiver.citytourguide.com";
 
 export async function GET(req, { params }) {
   const { token } = await params;
-
   if (!token || token === "undefined") {
     return new Response("<h2>Invalid waiver link. Please use the link from your SMS.</h2>", {
       headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -20,20 +19,21 @@ export async function GET(req, { params }) {
     .split(":")[0]
     .toLowerCase();
 
-  // Staging renders the in-repo waiver implementation for end-to-end testing.
-  // Production remains unchanged and continues to the existing live waiver service.
   if (host === STAGING_HOST) {
     try {
-      const templatePath = path.join(
-        process.cwd(),
-        "app",
-        "waiver",
-        "[token]",
-        "template.html"
-      );
-      const html = await readFile(templatePath, "utf8");
-
-      return new Response(html, {
+      const base = path.join(process.cwd(), "app", "waiver", "[token]");
+      const files = [
+        "prime-adult.html",
+        "prime-minor-1.html",
+        "prime-minor-2.html",
+        "prime-minor-3.html",
+        "prime-minor-4.html",
+        "prime-form.html",
+        "prime-script-1.html",
+        "prime-script-2.html",
+      ];
+      const parts = await Promise.all(files.map((name) => readFile(path.join(base, name), "utf8")));
+      return new Response(parts.join(""), {
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
@@ -42,7 +42,7 @@ export async function GET(req, { params }) {
         },
       });
     } catch (error) {
-      console.error("[waiver/staging] unable to load template", error);
+      console.error("[waiver/staging] unable to load Prime 2026 waiver", error);
       return new Response("<h2>Staging waiver is temporarily unavailable.</h2>", {
         status: 500,
         headers: { "Content-Type": "text/html; charset=utf-8" },
